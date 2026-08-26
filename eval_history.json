@@ -1,0 +1,449 @@
+[
+  {
+    "iteration": 0,
+    "type": "baseline",
+    "neural_win_rate": 0.46,
+    "declarer_win_rate": 0.3333333333333333,
+    "defender_win_rate": 0.7857142857142857,
+    "timestamp": "2026-08-25 20:26:28"
+  },
+  {
+    "iteration": 0,
+    "type": "baseline",
+    "neural_win_rate": 0.46,
+    "declarer_win_rate": 0.3333333333333333,
+    "defender_win_rate": 0.7857142857142857,
+    "timestamp": "2026-08-25 20:32:38"
+  },
+  {
+    "iteration": 0,
+    "type": "baseline",
+    "neural_win_rate": 0.46,
+    "declarer_win_rate": 0.3333333333333333,
+    "defender_win_rate": 0.7857142857142857,
+    "timestamp": "2026-08-25 20:38:04"
+  },
+  {
+    "iteration": 1,
+    "type": "generation_1",
+    "neural_win_rate": 0.68,
+    "declarer_win_rate": 0.43478260869565216,
+    "defender_win_rate": 0.8888888888888888,
+    "gen_time_seconds": 83.28518486022949,
+    "timestamp": "2026-08-25 20:40:39"
+  },
+  {
+    "iteration": 2,
+    "type": "generation_2",
+    "neural_win_rate": 0.6,
+    "declarer_win_rate": 0.47058823529411764,
+    "defender_win_rate": 0.875,
+    "gen_time_seconds": 65.30452799797058,
+    "timestamp": "2026-08-25 20:42:08"
+  },
+  {
+    "iteration": 3,
+    "type": "generation_3",
+    "neural_win_rate": 0.5,
+    "declarer_win_rate": 0.34375,
+    "defender_win_rate": 0.7777777777777778,
+    "gen_time_seconds": 84.92397785186768,
+    "timestamp": "2026-08-25 20:43:54"
+  },
+  {
+    "iteration": 4,
+    "type": "generation_4",
+    "neural_win_rate": 0.64,
+    "declarer_win_rate": 0.4230769230769231,
+    "defender_win_rate": 0.875,
+    "gen_time_seconds": 64.95778584480286,
+    "timestamp": "2026-08-25 20:47:03"
+  },
+  {
+    "iteration": 5,
+    "type": "generation_5",
+    "neural_win_rate": 0.66,
+    "declarer_win_rate": 0.4,
+    "defender_win_rate": 0.92,
+    "gen_time_seconds": 82.10155487060547,
+    "timestamp": "2026-08-25 20:48:45"
+  },
+  {
+    "iteration": 6,
+    "type": "generation_6",
+    "neural_win_rate": 0.72,
+    "declarer_win_rate": 0.6,
+    "defender_win_rate": 0.9,
+    "gen_time_seconds": 89.6631407737732,
+    "timestamp": "2026-08-25 20:50:37"
+  },
+  {
+    "iteration": 7,
+    "type": "generation_7",
+    "neural_win_rate": 0.68,
+    "declarer_win_rate": 0.5161290322580645,
+    "defender_win_rate": 0.9473684210526315,
+    "gen_time_seconds": 69.25721621513367,
+    "timestamp": "2026-08-25 20:52:12"
+  },
+  {
+    "iteration": 8,
+    "type": "generation_8",
+    "neural_win_rate": 0.58,
+    "declarer_win_rate": 0.2857142857142857,
+    "defender_win_rate": 0.9545454545454546,
+    "gen_time_seconds": 77.32189083099365,
+    "timestamp": "2026-08-25 20:53:49"
+  },
+  {
+    "iteration": 9,
+    "type": "generation_9",
+    "neural_win_rate": 0.64,
+    "declarer_win_rate": 0.4444444444444444,
+    "defender_win_rate": 0.8695652173913043,
+    "gen_time_seconds": 75.92672395706177,
+    "timestamp": "2026-08-25 20:55:27"
+  },
+  {
+    "iteration": 10,
+    "type": "generation_10",
+    "neural_win_rate": 0.52,
+    "declarer_win_rate": 0.40625,
+    "defender_win_rate": 0.7222222222222222,
+    "gen_time_seconds": 67.09347009658813,
+    "timestamp": "2026-08-25 20:56:57"
+  },
+  {
+    "iteration": 11,
+    "type": "generation_11",
+    "neural_win_rate": 0.6,
+    "declarer_win_rate": 0.48,
+    "defender_win_rate": 0.72,
+    "gen_time_seconds": 72.53387498855591,
+    "timestamp": "2026-08-25 21:34:18"
+  },
+  {
+    "iteration": 12,
+    "type": "generation_12",
+    "neural_win_rate": 0.68,
+    "declarer_win_rate": 0.4838709677419355,
+    "defender_win_rate": 1.0,
+    "gen_time_seconds": 80.61248683929443,
+    "timestamp": "2026-08-25 21:36:03"
+  },
+  {
+    "iteration": 13,
+    "type": "generation_13",
+    "neural_win_rate": 0.66,
+    "declarer_win_rate": 0.5172413793103449,
+    "defender_win_rate": 0.8571428571428571,
+    "gen_time_seconds": 84.32477283477783,
+    "timestamp": "2026-08-25 21:37:51"
+  },
+  {
+    "iteration": 14,
+    "type": "generation_14",
+    "neural_win_rate": 0.52,
+    "declarer_win_rate": 0.34285714285714286,
+    "defender_win_rate": 0.9333333333333333,
+    "gen_time_seconds": 69.96242594718933,
+    "timestamp": "2026-08-25 21:39:24"
+  },
+  {
+    "iteration": 15,
+    "type": "generation_15",
+    "neural_win_rate": 0.56,
+    "declarer_win_rate": 0.36363636363636365,
+    "defender_win_rate": 0.9411764705882353,
+    "gen_time_seconds": 73.12045812606812,
+    "timestamp": "2026-08-25 21:40:59"
+  },
+  {
+    "iteration": 16,
+    "type": "generation_16",
+    "neural_win_rate": 0.56,
+    "declarer_win_rate": 0.3333333333333333,
+    "defender_win_rate": 0.9,
+    "gen_time_seconds": 80.15769696235657,
+    "timestamp": "2026-08-25 21:42:38"
+  },
+  {
+    "iteration": 17,
+    "type": "generation_17",
+    "neural_win_rate": 0.6,
+    "declarer_win_rate": 0.3870967741935484,
+    "defender_win_rate": 0.9473684210526315,
+    "gen_time_seconds": 67.56650114059448,
+    "timestamp": "2026-08-25 21:44:07"
+  },
+  {
+    "iteration": 18,
+    "type": "generation_18",
+    "neural_win_rate": 0.54,
+    "declarer_win_rate": 0.3333333333333333,
+    "defender_win_rate": 0.782608695652174,
+    "gen_time_seconds": 79.2749252319336,
+    "timestamp": "2026-08-25 21:45:46"
+  },
+  {
+    "iteration": 19,
+    "type": "generation_19",
+    "neural_win_rate": 0.58,
+    "declarer_win_rate": 0.4375,
+    "defender_win_rate": 0.8333333333333334,
+    "gen_time_seconds": 79.58628010749817,
+    "timestamp": "2026-08-25 21:47:28"
+  },
+  {
+    "iteration": 20,
+    "type": "generation_20",
+    "neural_win_rate": 0.68,
+    "declarer_win_rate": 0.4444444444444444,
+    "defender_win_rate": 0.9565217391304348,
+    "gen_time_seconds": 76.50488114356995,
+    "timestamp": "2026-08-25 21:49:05"
+  },
+  {
+    "iteration": 21,
+    "type": "generation_21",
+    "neural_win_rate": 0.65,
+    "declarer_win_rate": 0.5084745762711864,
+    "defender_win_rate": 0.8536585365853658,
+    "gen_time_seconds": 380.33903074264526,
+    "timestamp": "2026-08-25 23:23:00"
+  },
+  {
+    "iteration": 22,
+    "type": "generation_22",
+    "neural_win_rate": 0.5353535353535354,
+    "declarer_win_rate": 0.3333333333333333,
+    "defender_win_rate": 0.8095238095238095,
+    "gen_time_seconds": 377.36755299568176,
+    "timestamp": "2026-08-25 23:29:58"
+  },
+  {
+    "iteration": 23,
+    "type": "generation_23",
+    "neural_win_rate": 0.57,
+    "declarer_win_rate": 0.33962264150943394,
+    "defender_win_rate": 0.8297872340425532,
+    "gen_time_seconds": 759.4539363384247,
+    "timestamp": "2026-08-26 00:15:20"
+  },
+  {
+    "iteration": 24,
+    "type": "generation_24",
+    "neural_win_rate": 0.69,
+    "declarer_win_rate": 0.5573770491803278,
+    "defender_win_rate": 0.8974358974358975,
+    "gen_time_seconds": 772.3358421325684,
+    "timestamp": "2026-08-26 00:29:06"
+  },
+  {
+    "iteration": 25,
+    "type": "generation_25",
+    "neural_win_rate": 0.49,
+    "declarer_win_rate": 0.3230769230769231,
+    "defender_win_rate": 0.8,
+    "gen_time_seconds": 777.4683079719543,
+    "timestamp": "2026-08-26 00:42:53"
+  },
+  {
+    "iteration": 26,
+    "type": "generation_26",
+    "neural_win_rate": 0.6060606060606061,
+    "declarer_win_rate": 0.37037037037037035,
+    "defender_win_rate": 0.8888888888888888,
+    "gen_time_seconds": 768.1103341579437,
+    "timestamp": "2026-08-26 00:56:23"
+  },
+  {
+    "iteration": 27,
+    "type": "generation_27",
+    "neural_win_rate": 0.58,
+    "declarer_win_rate": 0.3392857142857143,
+    "defender_win_rate": 0.8863636363636364,
+    "gen_time_seconds": 764.8352026939392,
+    "timestamp": "2026-08-26 01:09:50"
+  },
+  {
+    "iteration": 28,
+    "type": "generation_28",
+    "neural_win_rate": 0.53,
+    "declarer_win_rate": 0.32142857142857145,
+    "defender_win_rate": 0.7954545454545454,
+    "gen_time_seconds": 759.1537611484528,
+    "timestamp": "2026-08-26 01:23:15"
+  },
+  {
+    "iteration": 29,
+    "type": "generation_29",
+    "neural_win_rate": 0.54,
+    "declarer_win_rate": 0.3275862068965517,
+    "defender_win_rate": 0.8333333333333334,
+    "gen_time_seconds": 799.0555410385132,
+    "timestamp": "2026-08-26 01:37:15"
+  },
+  {
+    "iteration": 30,
+    "type": "generation_30",
+    "neural_win_rate": 0.57,
+    "declarer_win_rate": 0.43103448275862066,
+    "defender_win_rate": 0.7619047619047619,
+    "gen_time_seconds": 778.1756081581116,
+    "timestamp": "2026-08-26 01:51:11"
+  },
+  {
+    "iteration": 31,
+    "type": "generation_31",
+    "neural_win_rate": 0.52,
+    "declarer_win_rate": 0.2982456140350877,
+    "defender_win_rate": 0.813953488372093,
+    "gen_time_seconds": 752.6864778995514,
+    "timestamp": "2026-08-26 02:04:25"
+  },
+  {
+    "iteration": 32,
+    "type": "generation_32",
+    "neural_win_rate": 0.54,
+    "declarer_win_rate": 0.3225806451612903,
+    "defender_win_rate": 0.8947368421052632,
+    "gen_time_seconds": 786.0155053138733,
+    "timestamp": "2026-08-26 02:18:24"
+  },
+  {
+    "iteration": 33,
+    "type": "generation_33",
+    "neural_win_rate": 0.55,
+    "declarer_win_rate": 0.3220338983050847,
+    "defender_win_rate": 0.8780487804878049,
+    "gen_time_seconds": 809.5170109272003,
+    "timestamp": "2026-08-26 02:32:43"
+  },
+  {
+    "iteration": 34,
+    "type": "generation_34",
+    "neural_win_rate": 0.57,
+    "declarer_win_rate": 0.32786885245901637,
+    "defender_win_rate": 0.9487179487179487,
+    "gen_time_seconds": 800.9056701660156,
+    "timestamp": "2026-08-26 02:46:45"
+  },
+  {
+    "iteration": 35,
+    "type": "generation_35",
+    "neural_win_rate": 0.53,
+    "declarer_win_rate": 0.3230769230769231,
+    "defender_win_rate": 0.9142857142857143,
+    "gen_time_seconds": 794.3942401409149,
+    "timestamp": "2026-08-26 03:00:43"
+  },
+  {
+    "iteration": 36,
+    "type": "generation_36",
+    "neural_win_rate": 0.56,
+    "declarer_win_rate": 0.3448275862068966,
+    "defender_win_rate": 0.8571428571428571,
+    "gen_time_seconds": 766.3212978839874,
+    "timestamp": "2026-08-26 03:14:10"
+  },
+  {
+    "iteration": 37,
+    "type": "generation_37",
+    "neural_win_rate": 0.61,
+    "declarer_win_rate": 0.38181818181818183,
+    "defender_win_rate": 0.8888888888888888,
+    "gen_time_seconds": 827.2006978988647,
+    "timestamp": "2026-08-26 03:28:48"
+  },
+  {
+    "iteration": 38,
+    "type": "generation_38",
+    "neural_win_rate": 0.58,
+    "declarer_win_rate": 0.3275862068965517,
+    "defender_win_rate": 0.9285714285714286,
+    "gen_time_seconds": 871.3789498806,
+    "timestamp": "2026-08-26 03:44:06"
+  },
+  {
+    "iteration": 39,
+    "type": "generation_39",
+    "neural_win_rate": 0.59,
+    "declarer_win_rate": 0.375,
+    "defender_win_rate": 0.8636363636363636,
+    "gen_time_seconds": 766.2217619419098,
+    "timestamp": "2026-08-26 03:57:37"
+  },
+  {
+    "iteration": 40,
+    "type": "generation_40",
+    "neural_win_rate": 0.64,
+    "declarer_win_rate": 0.43333333333333335,
+    "defender_win_rate": 0.95,
+    "gen_time_seconds": 783.015086889267,
+    "timestamp": "2026-08-26 04:11:44"
+  },
+  {
+    "iteration": 41,
+    "type": "generation_41",
+    "neural_win_rate": 0.55,
+    "declarer_win_rate": 0.359375,
+    "defender_win_rate": 0.8888888888888888,
+    "gen_time_seconds": 778.6608710289001,
+    "timestamp": "2026-08-26 04:25:24"
+  },
+  {
+    "iteration": 42,
+    "type": "generation_42",
+    "neural_win_rate": 0.58,
+    "declarer_win_rate": 0.3157894736842105,
+    "defender_win_rate": 0.9302325581395349,
+    "gen_time_seconds": 791.316960811615,
+    "timestamp": "2026-08-26 04:39:17"
+  },
+  {
+    "iteration": 43,
+    "type": "generation_43",
+    "neural_win_rate": 0.5353535353535354,
+    "declarer_win_rate": 0.3157894736842105,
+    "defender_win_rate": 0.8333333333333334,
+    "gen_time_seconds": 770.3950440883636,
+    "timestamp": "2026-08-26 04:52:50"
+  },
+  {
+    "iteration": 44,
+    "type": "generation_44",
+    "neural_win_rate": 0.47,
+    "declarer_win_rate": 0.25396825396825395,
+    "defender_win_rate": 0.8378378378378378,
+    "gen_time_seconds": 785.9364211559296,
+    "timestamp": "2026-08-26 05:06:42"
+  },
+  {
+    "iteration": 45,
+    "type": "generation_45",
+    "neural_win_rate": 0.55,
+    "declarer_win_rate": 0.3220338983050847,
+    "defender_win_rate": 0.8780487804878049,
+    "gen_time_seconds": 800.3776390552521,
+    "timestamp": "2026-08-26 05:20:41"
+  },
+  {
+    "iteration": 46,
+    "type": "generation_46",
+    "neural_win_rate": 0.5555555555555556,
+    "declarer_win_rate": 0.3275862068965517,
+    "defender_win_rate": 0.8780487804878049,
+    "gen_time_seconds": 787.9975380897522,
+    "timestamp": "2026-08-26 05:34:35"
+  },
+  {
+    "iteration": 47,
+    "type": "generation_47",
+    "neural_win_rate": 0.56,
+    "declarer_win_rate": 0.4307692307692308,
+    "defender_win_rate": 0.8,
+    "gen_time_seconds": 831.6399621963501,
+    "timestamp": "2026-08-26 05:49:14"
+  }
+]

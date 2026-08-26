@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rikken AI — Research & Engineering Platform</title>
+  <meta name="description" content="State-of-the-Art Neural Network & Information Set MCTS AI for Rikken (4-Player Imperfect Information Card Game).">
+
+  <!-- Google Fonts: Outfit & Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Highlight.js for Code Highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
+
+  <!-- Marked.js for Markdown Parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <div class="brand" id="brandBtn">
+      <span>♠</span>
+      <span>Rikken AI</span>
+      <span class="brand-badge">Paper & Docs</span>
+    </div>
+
+    <div class="topbar-actions">
+      <button class="btn btn-secondary" onclick="window.location.hash='#rules'">
+        Game Rules
+      </button>
+      <button class="btn btn-secondary" onclick="window.location.hash='#architecture'">
+        AI Architecture
+      </button>
+      <button class="btn btn-primary" onclick="window.location.hash='#dataset'">
+        1M Dataset Report
+      </button>
+    </div>
+  </header>
+
+  <!-- Main App Container -->
+  <div id="app"></div>
+
+  <!-- Application Scripts -->
+  <script src="docs_data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
