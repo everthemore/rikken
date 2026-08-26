@@ -20,7 +20,7 @@
 #SBATCH --cpus-per-task=4             # 4 CPU cores per task
 #SBATCH --mem=4G                      # 4 GB RAM per task (ALICE limit: 16G/core)
 #SBATCH --time=02:00:00               # 2 hours max per shard
-#SBATCH --partition=cpu-short,short   # ALICE short CPU partitions
+#SBATCH --partition=cpu-short,cpu-medium   # ALICE short CPU partitions
 
 set -e
 
