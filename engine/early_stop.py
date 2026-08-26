@@ -91,18 +91,26 @@ def check_basic_early_stop(state: RikkenState) -> Optional[float]:
         if remaining == 0:
             return +1.0
 
-    # ---- Piek / Open Piek: win exactly 1 trick ----
+    # ---- Piek / Open Piek: win exactly 1 OR exactly 5 tricks ----
     elif c in (Contract.PIEK, Contract.OPEN_PIEK):
+        if remaining == 0:
+            return +1.0 if (d_tricks == 1 or d_tricks == 5) else -1.0
+
         if np.any(state.declarer_mask):
             active_decls = np.where(state.declarer_mask)[0]
-            if all(state.tricks_won[p] >= 2 for p in active_decls):
+            all_lost = True
+            for p in active_decls:
+                tw = int(state.tricks_won[p])
+                if tw < 6 and not (2 <= tw <= 4 and tw + remaining < 5):
+                    all_lost = False
+                    break
+            if all_lost:
                 return -1.0
         else:
-            if d_tricks >= 2:
-                # Overshot 1 trick target
+            if d_tricks >= 6:
                 return -1.0
-        if remaining == 0:
-            return +1.0 if (d_tricks == 1) else -1.0
+            if 2 <= d_tricks <= 4 and d_tricks + remaining < 5:
+                return -1.0
 
     return None
 

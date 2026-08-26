@@ -235,11 +235,22 @@ class HeuristicAgent:
         p = self.seat
         is_decl = state.declarer_mask[p] if hasattr(state, 'declarer_mask') else (p == state.declarer)
         if is_decl:
-            if state.tricks_won[p] == 0:
-                # Need our 1 trick: play highest card
+            tw = state.tricks_won[p]
+            if tw == 0:
+                # Target 1 trick: play highest card to take trick 1
                 return int(max(legal_cards, key=lambda c: rank_of(c)))
+            elif tw == 1:
+                # Won 1 trick: duck everything (pure Misere)
+                return int(min(legal_cards, key=lambda c: rank_of(c)))
+            elif 2 <= tw <= 4:
+                # Forced into 2nd trick: pivot to aiming for 5 tricks!
+                # Play aggressively to win tricks
+                return int(max(legal_cards, key=lambda c: rank_of(c)))
+            elif tw == 5:
+                # Reached 5 tricks: switch back to Misere ducking to prevent 6th trick
+                return int(min(legal_cards, key=lambda c: rank_of(c)))
             else:
-                # Already won our 1 trick: duck everything
+                # Overshot 5 tricks: duck
                 return int(min(legal_cards, key=lambda c: rank_of(c)))
         else:
             return int(min(legal_cards, key=lambda c: rank_of(c)))

@@ -389,16 +389,30 @@ class TestEarlyStopping:
         result = check_basic_early_stop(s)
         assert result == -1.0
 
-    def test_piek_loss_at_2_tricks(self):
-        """Piek: 2 tricks -> early loss (overshot target of 1 trick)."""
-        s = self._make_state(Contract.PIEK, d_tricks=2, def_tricks=3, remaining=8)
+    def test_piek_loss_in_dead_zone(self):
+        """Piek: 2 tricks with remaining=2 (max 4) -> cannot reach 5 tricks -> loss."""
+        s = self._make_state(Contract.PIEK, d_tricks=2, def_tricks=9, remaining=2)
+        s.trick_count = 11
         result = check_basic_early_stop(s)
         assert result == -1.0, f"Expected -1.0, got {result}"
 
     def test_piek_win_at_exactly_1(self):
         s = self._make_state(Contract.PIEK, d_tricks=1, def_tricks=12, remaining=0)
+        s.trick_count = 13
         result = check_basic_early_stop(s)
         assert result == +1.0
+
+    def test_piek_win_at_exactly_5(self):
+        s = self._make_state(Contract.PIEK, d_tricks=5, def_tricks=8, remaining=0)
+        s.trick_count = 13
+        result = check_basic_early_stop(s)
+        assert result == +1.0
+
+    def test_piek_loss_at_6_tricks(self):
+        s = self._make_state(Contract.PIEK, d_tricks=6, def_tricks=2, remaining=5)
+        s.trick_count = 8
+        result = check_basic_early_stop(s)
+        assert result == -1.0
 
 
 # ---------------------------------------------------------------------------

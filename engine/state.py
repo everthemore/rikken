@@ -22,7 +22,7 @@ class Contract(IntEnum):
     RIK           = 1    # Partner contract: trump in C/D/S, call vraagaas, win 8+ tricks
     RIK_BETER     = 2    # Partner contract: trump fixed to HEARTS, call vraagaas, win 8+ tricks
     ACHT_ALLEEN   = 3    # Solo: choose trump, win 8+ tricks
-    PIEK          = 4    # Solo/Multi: no trump, win exactly 1 trick
+    PIEK          = 4    # Solo/Multi: no trump, win exactly 1 OR exactly 5 tricks
     NEGEN_ALLEEN  = 5    # Solo: choose trump, win 9+ tricks
     MISERE        = 6    # Solo/Multi: no trump, win exactly 0 tricks
     TIEN_ALLEEN   = 7    # Solo: choose trump, win 10+ tricks
@@ -72,9 +72,9 @@ class Contract(IntEnum):
             cls.TWAALF_ALLEEN:12,
             cls.SOLO_SLIM:    13,
             cls.TROELA:        8,
-            cls.PIEK:          1,   # Exact: 1 trick
+            cls.PIEK:         -1,   # Exact: 1 or 5 tricks
             cls.MISERE:        0,   # Exact: 0 tricks
-            cls.OPEN_PIEK:     1,   # Exact: 1 trick
+            cls.OPEN_PIEK:    -1,   # Exact: 1 or 5 tricks
             cls.OPEN_MISERE:   0,   # Exact: 0 tricks
         }
         return table.get(c, None)

@@ -279,7 +279,7 @@ class RikkenGame:
         elif c in (Contract.MISERE, Contract.OPEN_MISERE):
             won = d == 0
         elif c in (Contract.PIEK, Contract.OPEN_PIEK):
-            won = (d == 1)
+            won = (d == 1) or (d == 5)
         else:
             won = False
 
@@ -296,14 +296,14 @@ class RikkenGame:
                     if c in (Contract.MISERE, Contract.OPEN_MISERE):
                         s.rewards[p] = +1.0 if tw == 0 else -1.0
                     elif c in (Contract.PIEK, Contract.OPEN_PIEK):
-                        s.rewards[p] = +1.0 if tw == 1 else -1.0
+                        s.rewards[p] = +1.0 if (tw == 1 or tw == 5) else -1.0
                 else:
                     # Defender gets positive payoff if at least one declarer failed
                     active_decls = np.where(s.declarer_mask)[0]
                     decl_wins = sum(
                         1 for d in active_decls
                         if (c in (Contract.MISERE, Contract.OPEN_MISERE) and s.tricks_won[d] == 0)
-                        or (c in (Contract.PIEK, Contract.OPEN_PIEK) and s.tricks_won[d] == 1)
+                        or (c in (Contract.PIEK, Contract.OPEN_PIEK) and (s.tricks_won[d] == 1 or s.tricks_won[d] == 5))
                     )
                     s.rewards[p] = +1.0 if decl_wins < len(active_decls) else -1.0
         else:
