@@ -6,9 +6,6 @@
 # Submit with:
 #   sbatch cluster/submit_self_play.slurm
 #
-# Or customize array range and parameters on the fly:
-#   sbatch --array=0-49 cluster/submit_self_play.slurm
-#
 # =============================================================================
 
 #SBATCH --job-name=rikken_self_play
@@ -18,26 +15,41 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4             # 4 CPU cores per task
-#SBATCH --mem=4G                      # 4 GB RAM per task (ALICE limit: 16G/core)
+#SBATCH --mem=4G                      # 4 GB RAM per task
 #SBATCH --time=02:00:00               # 2 hours max per shard
-#SBATCH --partition=cpu-short   # ALICE short CPU partitions
+#SBATCH --partition=cpu-short         # ALICE CPU partition
 
 set -e
 
-# Load ALICE modules & Conda
+# Robust Conda Activation for ALICE compute nodes
 module load miniconda3 2>/dev/null || module load Anaconda3 2>/dev/null || true
-if [ -f "$(conda info --base 2>/dev/null)/etc/profile.d/conda.sh" ]; then
-    source "$(conda info --base)/etc/profile.d/conda.sh"
-elif [ -f "$HOME/.bashrc" ]; then
+if [ -f "$HOME/.bashrc" ]; then
     source "$HOME/.bashrc"
 fi
-conda activate rikken_ai 2>/dev/null || source activate rikken_ai 2>/dev/null || true
+if command -v conda &>/dev/null; then
+    eval "$(conda shell.bash hook)"
+elif [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+    source "$HOME/miniconda3/etc/profile.d/conda.sh"
+elif [ -f "$HOME/anaconda3/etc/profile.d/conda.sh" ]; then
+    source "$HOME/anaconda3/etc/profile.d/conda.sh"
+fi
+
+conda activate rikken_ai 2>/dev/null || conda activate rikken 2>/dev/null || source activate rikken_ai 2>/dev/null || true
+
+# Direct python interpreter fallback if conda activate didn't put it in PATH
+PYTHON="python"
+for candidate in "$CONDA_PREFIX/bin/python" "$HOME/miniconda3/envs/rikken_ai/bin/python" "$HOME/.conda/envs/rikken_ai/bin/python" "$HOME/anaconda3/envs/rikken_ai/bin/python"; do
+    if [ -x "$candidate" ]; then
+        PYTHON="$candidate"
+        break
+    fi
+done
 
 PROJECT_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
 cd "$PROJECT_DIR"
 export PYTHONPATH="$PROJECT_DIR:$PYTHONPATH"
 
-# Parameters (can be passed via environment or defaults)
+# Parameters
 GAMES_PER_WORKER=${GAMES_PER_WORKER:-500}
 ROLLOUTS=${ROLLOUTS:-400}
 DETERMINIZATIONS=${DETERMINIZATIONS:-20}
@@ -50,11 +62,13 @@ echo "=========================================================="
 echo "  Rikken AI — ALICE HPC Self-Play Task"
 echo "  Job ID: $SLURM_ARRAY_JOB_ID | Task ID: $SLURM_ARRAY_TASK_ID"
 echo "  Host: $(hostname) | Partition: $SLURM_JOB_PARTITION"
+echo "  Python Binary: $($PYTHON -c 'import sys; print(sys.executable)')"
+echo "  Torch Available: $($PYTHON -c 'import torch; print(torch.__version__)' 2>/dev/null || echo 'NOT FOUND')"
 echo "  Games: $GAMES_PER_WORKER | Rollouts: $ROLLOUTS | Det: $DETERMINIZATIONS"
 echo "  Output: $OUTPUT_DIR"
 echo "=========================================================="
 
-python -u training/self_play.py \
+$PYTHON -u training/self_play.py \
     --games "$GAMES_PER_WORKER" \
     --rollouts "$ROLLOUTS" \
     --determinizations "$DETERMINIZATIONS" \

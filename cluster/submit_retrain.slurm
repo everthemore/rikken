@@ -17,18 +17,32 @@
 #SBATCH --mem=16G                     # 16 GB RAM
 #SBATCH --gres=gpu:1                  # Explicit GPU allocation (required on ALICE)
 #SBATCH --time=02:00:00               # 2 hours max
-#SBATCH --partition=gpu-short  # ALICE GPU partitions
+#SBATCH --partition=gpu-short         # ALICE GPU partition
 
 set -e
 
-# Load ALICE modules & Conda
+# Robust Conda Activation for ALICE compute nodes
 module load miniconda3 2>/dev/null || module load Anaconda3 2>/dev/null || true
-if [ -f "$(conda info --base 2>/dev/null)/etc/profile.d/conda.sh" ]; then
-    source "$(conda info --base)/etc/profile.d/conda.sh"
-elif [ -f "$HOME/.bashrc" ]; then
+if [ -f "$HOME/.bashrc" ]; then
     source "$HOME/.bashrc"
 fi
-conda activate rikken_ai 2>/dev/null || source activate rikken_ai 2>/dev/null || true
+if command -v conda &>/dev/null; then
+    eval "$(conda shell.bash hook)"
+elif [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+    source "$HOME/miniconda3/etc/profile.d/conda.sh"
+elif [ -f "$HOME/anaconda3/etc/profile.d/conda.sh" ]; then
+    source "$HOME/anaconda3/etc/profile.d/conda.sh"
+fi
+
+conda activate rikken_ai 2>/dev/null || conda activate rikken 2>/dev/null || source activate rikken_ai 2>/dev/null || true
+
+PYTHON="python"
+for candidate in "$CONDA_PREFIX/bin/python" "$HOME/miniconda3/envs/rikken_ai/bin/python" "$HOME/.conda/envs/rikken_ai/bin/python" "$HOME/anaconda3/envs/rikken_ai/bin/python"; do
+    if [ -x "$candidate" ]; then
+        PYTHON="$candidate"
+        break
+    fi
+done
 
 PROJECT_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
 cd "$PROJECT_DIR"
@@ -62,14 +76,15 @@ fi
 echo "=========================================================="
 echo "  Rikken AI — ALICE HPC GPU Retraining"
 echo "  Job ID: $SLURM_JOB_ID | Host: $(hostname) | Partition: $SLURM_JOB_PARTITION"
-echo "  GPU: $(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null || echo 'GPU allocated')"
+echo "  Python: $($PYTHON -c 'import sys; print(sys.executable)')"
+echo "  GPU Device: $($PYTHON -c 'import torch; print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CUDA NOT AVAILABLE")' 2>/dev/null || echo 'Error checking CUDA')"
 echo "  Iteration: $ITERATION | Buffer Window: $BUFFER_WINDOW generations"
 echo "  Replay Buffer Directories: $REPLAY_PATHS"
 echo "=========================================================="
 
 # 1. Retrain Bidding Value Network (BVN) on Replay Buffer
 echo "--- 1. Retraining BVN on Rolling Replay Buffer ---"
-python -u -m training.train_bvn \
+$PYTHON -u -m training.train_bvn \
     --data-path "$REPLAY_PATHS" \
     --epochs "$EPOCHS" \
     --batch-size "$BATCH_SIZE" \
@@ -77,16 +92,15 @@ python -u -m training.train_bvn \
 
 # 2. Retrain Belief Network (BN) on Replay Buffer
 echo "--- 2. Retraining Belief Network on Rolling Replay Buffer ---"
-python -u -m training.train_bn \
+$PYTHON -u -m training.train_bn \
     --data-path "$REPLAY_PATHS" \
     --epochs "$EPOCHS" \
     --batch-size "$BATCH_SIZE" \
     --resume-latest
 
-
 # 3. Benchmark Tournament Evaluation vs Baseline & Log to eval_history.json
 echo "--- 3. Evaluating Generation $ITERATION in Tournament ---"
-python -u - << 'EVAL_EOF'
+$PYTHON -u - << 'EVAL_EOF'
 import os, json, time
 import numpy as np
 from training.tournament import run_tournament
