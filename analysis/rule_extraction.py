@@ -15,11 +15,7 @@ from sklearn.ensemble import RandomForestClassifier
 from engine.card import NUM_SUITS, NUM_RANKS, rank_of, suit_of, cards_in_suit, SUIT_MASKS
 from engine.state import Contract
 
-CONTRACT_NAMES = [
-    'PAS', 'TROELA', 'RIK', 'ACHT_ALLEEN', 'NEGEN_ALLEEN',
-    'TIEN_ALLEEN', 'ELF_ALLEEN', 'TWAALF_ALLEEN', 'SOLO_SLIM',
-    'PIEK', 'OPEN_PIEK', 'MISERE', 'OPEN_MISERE'
-]
+CONTRACT_NAMES = [Contract(i).name for i in range(14)]
 
 FEATURE_NAMES = [
     'HCP', 'Ace_Count', 'King_Count', 'Queen_Count', 'Jack_Count',
@@ -98,11 +94,11 @@ def run_rule_extraction(max_shards: int = 25):
     Extract bidding rules for each contract type using shallow decision trees.
     """
     print(f"Loading data from up to {max_shards} shards for Explainable AI Rule Extraction...")
-    shard_files = sorted(glob.glob("data/shard_*.npz"))[:max_shards]
+    shard_files = sorted(glob.glob("data/shard_*.npz") + glob.glob("data/self_play/iter_*/*.npz"))[:max_shards]
     if not shard_files:
-        raise FileNotFoundError("No training shards found in data/")
+        raise FileNotFoundError("No training shards found in data/ or data/self_play/")
 
-    contract_data = {c: {'X': [], 'y': []} for c in range(1, 13)}
+    contract_data = {c: {'X': [], 'y': []} for c in range(1, 14)}
 
     for s_path in shard_files:
         data = np.load(s_path)
@@ -123,7 +119,7 @@ def run_rule_extraction(max_shards: int = 25):
 
     rules_summary = {}
 
-    for c in range(1, 13):
+    for c in range(1, 14):
         name = CONTRACT_NAMES[c]
         X = np.array(contract_data[c]['X'])
         y = np.array(contract_data[c]['y'])
