@@ -115,6 +115,9 @@ class ISMCTSAgent:
         self.bn = belief_network
         self.rng = rng or np.random.default_rng()
 
+    def set_seat(self, seat: int) -> None:
+        self.seat = seat
+
     def act(self, state: RikkenState) -> int:
         """Run ISMCTS and return the best action for state.current_player."""
         assert state.current_player == self.seat

@@ -1,49 +1,42 @@
 """
-agents/neural_agent.py — Integrated Neural Agent combining BVN, BN, and ISMCTS.
+agents/neural_agent.py — Neural Agent combining BVN, Belief Network, and ISMCTS.
 
-This agent represents the final AI architecture:
-  - Bidding: Queries BVN (Transformer) for Expected Values (EV) across legal bids,
-             selecting the argmax EV.
-  - Declaration: Uses neural heuristic / trump evaluation for contract choices.
-  - Trick-taking: Runs ISMCTS with Belief Network (BN) guided determinizations.
+Architecture:
+  1. Bidding: Evaluates hand + history with BVN -> picks legal bid with highest EV.
+  2. Trick-taking: Runs ISMCTS determinizations informed by the Belief Network.
 """
 
 from __future__ import annotations
-import numpy as np
+import os
 import torch
+import numpy as np
+import logging
 from typing import Optional, List
 
+from engine.card import card_id, suit_of, rank_of, ACE_RANK, HEARTS_SUIT, SUIT_MASKS
 from engine.state import RikkenState, Contract, Phase
 from engine.game import RikkenGame
-from engine.rules import legal_bids, legal_plays
-from engine.card import NUM_SUITS, cards_in_suit, rank_of, card_id, ACE_RANK, NUM_RANKS
+from engine.rules import legal_bids
 from networks.bvn import BVN
 from networks.bn import BeliefNetwork
 from agents.ismcts import ISMCTSAgent
+from agents.heuristic import HeuristicAgent
 import config
+
+log = logging.getLogger(__name__)
 
 
 class NeuralAgent:
     """
-    Complete hybrid Neural + ISMCTS agent.
-
-    Args:
-        seat:             Player index (0-3).
-        game:             RikkenGame instance.
-        bvn:              Pretrained BVN model (or path to checkpoint).
-        bn:               Pretrained BeliefNetwork model (or path to checkpoint).
-        n_determinizations: ISMCTS worlds per move.
-        n_rollouts:       ISMCTS total rollouts per move.
-        device:           PyTorch device ('cuda', 'mps', 'cpu').
-        rng:              NumPy random generator.
+    Combined Neural Agent for both Bidding and Trick-taking.
     """
 
     def __init__(
         self,
         seat: int,
         game: RikkenGame,
-        bvn: Optional[BVN | str] = None,
-        bn: Optional[BeliefNetwork | str] = None,
+        bvn: Optional[str | BVN] = None,
+        bn: Optional[str | BeliefNetwork] = None,
         n_determinizations: int = config.ISMCTS_DETERMINIZATIONS,
         n_rollouts: int = config.ISMCTS_ROLLOUTS,
         device: str = config.DEVICE,
@@ -56,23 +49,32 @@ class NeuralAgent:
 
         # Load BVN
         if isinstance(bvn, str):
-            self.bvn = BVN().to(device)
-            ckpt = torch.load(bvn, map_location=device)
-            state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
-            self.bvn.load_state_dict(state_dict)
-            self.bvn.eval()
+            if os.path.exists(bvn):
+                self.bvn = BVN().to(device)
+                ckpt = torch.load(bvn, map_location=device, weights_only=False)
+                state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
+                self.bvn.load_state_dict(state_dict)
+                self.bvn.eval()
+            else:
+                self.bvn = None
         else:
             self.bvn = bvn
 
         # Load BN
         if isinstance(bn, str):
-            self.bn = BeliefNetwork().to(device)
-            ckpt = torch.load(bn, map_location=device)
-            state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
-            self.bn.load_state_dict(state_dict)
-            self.bn.eval()
+            if os.path.exists(bn):
+                self.bn = BeliefNetwork().to(device)
+                ckpt = torch.load(bn, map_location=device, weights_only=False)
+                state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
+                self.bn.load_state_dict(state_dict)
+                self.bn.eval()
+            else:
+                self.bn = None
         else:
             self.bn = bn
+
+        # Fallback Heuristic
+        self.heuristic = HeuristicAgent(seat=seat, rng=self.rng)
 
         # Trick-taking ISMCTS
         self.ismcts = ISMCTSAgent(
@@ -83,6 +85,13 @@ class NeuralAgent:
             belief_network=self.bn,
             rng=self.rng,
         )
+
+    def set_seat(self, seat: int) -> None:
+        self.seat = seat
+        if hasattr(self, 'heuristic') and self.heuristic is not None:
+            self.heuristic.set_seat(seat)
+        if hasattr(self, 'ismcts') and self.ismcts is not None:
+            self.ismcts.set_seat(seat)
 
     def act(self, state: RikkenState) -> int:
         """Choose action during either Bidding or Trick-taking."""
@@ -97,75 +106,36 @@ class NeuralAgent:
     def _act_bid(self, state: RikkenState) -> int:
         """Evaluate legal bids with BVN and select argmax expected value."""
         legal = legal_bids(state)
-        if not legal:
+        if not legal or legal == [int(Contract.PAS)]:
             return int(Contract.PAS)
-        if len(legal) == 1:
-            return legal[0]
 
-        if self.bvn is not None:
-            hand = state.hands[self.seat]
-            bid_hist = np.zeros((4, 13), dtype=np.int8)
-            for p in range(4):
-                if state.bids[p] >= 0:
-                    bid_hist[p, state.bids[p]] = 1
+        if self.bvn is None:
+            return self.heuristic.act(state)
 
-            evs = self.bvn.predict_ev(hand, bid_hist, legal, device=self.device)
-            # Find best legal contract
-            best_bid = legal[0]
-            best_ev = -float('inf')
-            for b in legal:
-                if evs[b] > best_ev:
-                    best_ev = evs[b]
-                    best_bid = b
-            return best_bid
-        else:
-            # Fallback heuristic
-            return legal[0]
+        p = self.seat
+        hand = state.hands[p]
+        bids = state.bids
+
+        ev_scores = self.bvn.predict_ev(hand=hand, bids=bids, device=self.device)
+
+        # Mask illegal bids with -inf
+        masked_scores = np.full(len(ev_scores), -np.inf)
+        for b in legal:
+            masked_scores[b] = ev_scores[b]
+
+        best_bid = int(np.argmax(masked_scores))
+
+        # Check PAS threshold
+        if best_bid != int(Contract.PAS) and masked_scores[best_bid] < 0.40:
+            if int(Contract.PAS) in legal:
+                return int(Contract.PAS)
+
+        return best_bid
 
     def declare_trump(self, state: RikkenState) -> int:
-        """Select best trump suit."""
-        from engine.state import Contract as C
-        hand = state.hands[self.seat]
-
-        forbidden_suit = -1
-        if state.contract == C.TROELA and state.partner >= 0:
-            for suit in range(NUM_SUITS):
-                ace = card_id(suit, ACE_RANK)
-                if state.hands[state.partner, ace]:
-                    forbidden_suit = suit
-                    break
-
-        best_suit = -1
-        best_score = -1
-        for suit in range(NUM_SUITS):
-            if suit == forbidden_suit:
-                continue
-            suit_cards = cards_in_suit(hand, suit)
-            score = len(suit_cards)
-            for c in suit_cards:
-                score += rank_of(c) / NUM_RANKS
-            if score > best_score:
-                best_score = score
-                best_suit = suit
-
-        if best_suit < 0:
-            for suit in range(NUM_SUITS):
-                if suit != forbidden_suit:
-                    return suit
-        return best_suit
+        if state.contract == Contract.RIK_BETER:
+            return HEARTS_SUIT
+        return self.heuristic.declare_trump(state)
 
     def declare_vraagaas(self, state: RikkenState, trump_suit: int) -> int:
-        """Select vraagaas suit."""
-        hand = state.hands[self.seat]
-        worst_suit = -1
-        worst_score = float('inf')
-        for suit in range(NUM_SUITS):
-            ace = card_id(suit, ACE_RANK)
-            if hand[ace]:
-                continue
-            suit_cards = cards_in_suit(hand, suit)
-            score = len(suit_cards) + sum(rank_of(c) for c in suit_cards)
-            if score < worst_score:
-                worst_score = score
-                worst_suit = suit
-        return worst_suit if worst_suit >= 0 else (trump_suit + 1) % NUM_SUITS
+        return self.heuristic.declare_vraagaas(state, trump_suit)
