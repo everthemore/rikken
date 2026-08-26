@@ -39,7 +39,7 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 
 # 4. Install requirements
 echo "[3/4] Installing NumPy and project dependencies..."
-pip install numpy tqdm matplotlib
+pip install numpy tqdm matplotlib scikit-learn pytest
 
 # 5. Create required project directories
 echo "[4/4] Creating cluster log and data directories..."

@@ -94,8 +94,8 @@ from training.tournament import run_tournament
 iter_num = int(os.environ.get('ITERATION', '1'))
 metrics = run_tournament(
     n_games=100,
-    bvn_path='checkpoints/bvn_latest.pt',
-    bn_path='checkpoints/bn_latest.pt',
+    bvn_path='checkpoints/bvn_best.pt',
+    bn_path='checkpoints/bn_best.pt',
     rollouts=50,
     determinizations=10,
     seed=42 + iter_num * 1000
