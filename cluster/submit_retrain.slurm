@@ -17,7 +17,7 @@
 #SBATCH --mem=16G                     # 16 GB RAM
 #SBATCH --gres=gpu:1                  # Explicit GPU allocation (required on ALICE)
 #SBATCH --time=02:00:00               # 2 hours max
-#SBATCH --partition=gpu-short,gpu-medium  # ALICE GPU partitions
+#SBATCH --partition=gpu-short  # ALICE GPU partitions
 
 set -e
 
