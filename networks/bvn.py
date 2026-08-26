@@ -70,7 +70,10 @@ class BVN(nn.Module):
         hands: torch.Tensor,
         bid_hist: torch.Tensor,
     ) -> Tuple[torch.Tensor, None]:
-        batch_size = hands.shape[0]
+        if bid_hist.dim() > 2:
+            bid_hist = bid_hist.flatten(start_dim=1)
+        if hands.dim() > 2:
+            hands = hands.flatten(start_dim=1)
         x = torch.cat([hands, bid_hist], dim=-1)
         h = self.input_proj(x).unsqueeze(1)
         h = self.transformer(h).squeeze(1)

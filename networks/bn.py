@@ -32,13 +32,15 @@ import config
 
 NUM_OPPONENTS = 3
 HAND_SIZE     = 52
+NUM_CONTRACTS = 14
+BID_HIST_SIZE = 4 * NUM_CONTRACTS  # 56
 INPUT_SIZE    = (
-    HAND_SIZE           # own remaining hand
-    + HAND_SIZE         # played cards (public)
-    + HAND_SIZE         # bid history one-hot (4 players × 13 contracts = 52)
-    + HAND_SIZE         # current trick (one-hot over 52, one card per slot)
-    + 4 * 4             # void matrix flattened (4 players × 4 suits)
-)  # = 52+52+52+52+16 = 224
+    HAND_SIZE           # own remaining hand (52)
+    + HAND_SIZE         # played cards (public) (52)
+    + BID_HIST_SIZE     # bid history one-hot (4 players × 14 contracts = 56)
+    + HAND_SIZE         # current trick (52)
+    + 4 * 4             # void matrix flattened (16)
+)  # = 52+52+56+52+16 = 228
 
 
 # ---------------------------------------------------------------------------
@@ -142,7 +144,18 @@ class BeliefNetwork(nn.Module):
         """
         B = own_hand.shape[0]
 
-        # Concatenate all features: (B, 224)
+        if bid_history.dim() > 2:
+            bid_history = bid_history.flatten(start_dim=1)
+        if void_matrix.dim() > 2:
+            void_matrix = void_matrix.flatten(start_dim=1)
+        if own_hand.dim() > 2:
+            own_hand = own_hand.flatten(start_dim=1)
+        if played_cards.dim() > 2:
+            played_cards = played_cards.flatten(start_dim=1)
+        if current_trick.dim() > 2:
+            current_trick = current_trick.flatten(start_dim=1)
+
+        # Concatenate all features: (B, 228)
         x = torch.cat([own_hand, played_cards, bid_history, current_trick, void_matrix], dim=-1)
 
         # Project and run trunk

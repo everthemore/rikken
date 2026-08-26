@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "iteration": 0,
+    "type": "baseline",
+    "neural_win_rate": 0.48,
+    "declarer_win_rate": 0.1538,
+    "defender_win_rate": 0.8333,
+    "timestamp": "2026-08-26 15:57:48"
+  }
+]

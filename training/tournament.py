@@ -145,8 +145,7 @@ def run_tournament(
                 'heuristic_wins': 0,
             }
 
-    print(f"
-{'='*65}")
+    print("\n" + "="*65)
     print(f"  TOURNAMENT: Neural Agent (BVN+BN+ISMCTS) vs Heuristic Baseline")
     print(f"  Games: {n_games} | Rollouts: {rollouts} | Determinizations: {determinizations}")
     print(f"{'='*65}")
@@ -213,8 +212,7 @@ def run_tournament(
                 'heuristic_win_rate': round(h_wr, 3) if h_wr is not None else None,
             }
 
-    print(f"
-{'-'*65}")
+    print("\n" + "-"*65)
     print(f"  TOURNAMENT FINAL RESULTS ({total_valid_games} games, {elapsed:.1f}s)")
     print(f"{'-'*65}")
     print(f"  Overall Match Win Rate (Neural):  {win_rate:6.1%}  ({team_a_wins}/{total_valid_games})")
