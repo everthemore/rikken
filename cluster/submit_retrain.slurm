@@ -83,4 +83,51 @@ python -u -m training.train_bn \
     --batch-size "$BATCH_SIZE" \
     --resume-latest
 
+
+# 3. Benchmark Tournament Evaluation vs Baseline & Log to eval_history.json
+echo "--- 3. Evaluating Generation $ITERATION in Tournament ---"
+python -u - << 'EVAL_EOF'
+import os, json, time
+import numpy as np
+from training.tournament import run_tournament
+
+iter_num = int(os.environ.get('ITERATION', '1'))
+metrics = run_tournament(
+    n_games=100,
+    bvn_path='checkpoints/bvn_latest.pt',
+    bn_path='checkpoints/bn_latest.pt',
+    rollouts=50,
+    determinizations=10,
+    seed=42 + iter_num * 1000
+)
+
+history_file = 'eval_history.json'
+history = []
+if os.path.exists(history_file):
+    try:
+        with open(history_file, 'r') as f:
+            history = json.load(f)
+    except Exception:
+        history = []
+
+entry = {
+    'iteration': iter_num,
+    'type': f'generation_{iter_num}',
+    'neural_win_rate': metrics['neural_win_rate'],
+    'declarer_win_rate': metrics['declarer_win_rate'],
+    'defender_win_rate': metrics['defender_win_rate'],
+    'neural_avg_tricks_declared': metrics.get('neural_avg_tricks_declared'),
+    'heuristic_avg_tricks_declared': metrics.get('heuristic_avg_tricks_declared'),
+    'contract_breakdown': metrics.get('contract_breakdown', {}),
+    'total_games': metrics.get('total_games', 100),
+    'redeals': metrics.get('redeals', 0),
+    'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+}
+history.append(entry)
+with open(history_file, 'w') as f:
+    json.dump(history, f, indent=2)
+
+print(f"[Gen {iter_num}] Logged evaluation metrics to {history_file}")
+EVAL_EOF
+
 echo "=== ALICE Retraining Iteration $ITERATION complete! ==="

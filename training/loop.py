@@ -159,6 +159,11 @@ def run_self_play_loop(
             'neural_win_rate': eval_metrics['neural_win_rate'],
             'declarer_win_rate': eval_metrics['declarer_win_rate'],
             'defender_win_rate': eval_metrics['defender_win_rate'],
+            'neural_avg_tricks_declared': eval_metrics.get('neural_avg_tricks_declared'),
+            'heuristic_avg_tricks_declared': eval_metrics.get('heuristic_avg_tricks_declared'),
+            'contract_breakdown': eval_metrics.get('contract_breakdown', {}),
+            'total_games': eval_metrics.get('total_games', eval_games),
+            'redeals': eval_metrics.get('redeals', 0),
             'gen_time_seconds': gen_time,
             'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
         }
