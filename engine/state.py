@@ -80,7 +80,7 @@ class Contract(IntEnum):
         return table.get(c, None)
 
     @classmethod
-    def name(cls, c: int | 'Contract') -> str:
+    def get_name(cls, c: int | 'Contract') -> str:
         try:
             return cls(c).name
         except ValueError:
