@@ -1,12 +1,4 @@
-"""
-analysis/run_all_analysis.py — Unified Analysis & XAI Extraction Pipeline.
-
-Executes:
-  1. Policy Evolution & Win-Rate Trajectory Analysis
-  2. Explainable AI (XAI) Decision Tree Bidding Rule Extraction
-  3. Tactical Trick-Taking Win-Rate Impact Evaluation
-"""
-
+# analysis/run_all_analysis.py
 import os
 import sys
 import json
@@ -22,8 +14,7 @@ def run_pipeline():
     # 1. Inspect eval_history.json
     history_file = "eval_history.json"
     if os.path.exists(history_file):
-        print("
-[1/3] POLICY EVOLUTION SUMMARY (eval_history.json):")
+        print("\n[1/3] POLICY EVOLUTION SUMMARY (eval_history.json):")
         print("-" * 70)
         try:
             with open(history_file, "r") as f:
@@ -43,22 +34,19 @@ def run_pipeline():
         except Exception as e:
             print(f"Error loading eval_history.json: {e}")
     else:
-        print("
-[1/3] No eval_history.json found.")
+        print("\n[1/3] No eval_history.json found.")
 
     # 2. Run XAI Bidding Rule Extraction
-    print("
-[2/3] EXPLAINABLE AI: EXTRACTING BIDDING RULES & THRESHOLDS:")
+    print("\n[2/3] EXPLAINABLE AI: EXTRACTING BIDDING RULES & THRESHOLDS:")
     print("-" * 70)
     try:
-        from analysis.rule_extraction import extract_rules_from_dataset
-        extract_rules_from_dataset(max_shards=25)
+        from analysis.rule_extraction import run_rule_extraction
+        run_rule_extraction(max_shards=25)
     except Exception as e:
         print(f"Rule extraction note: {e}")
 
     # 3. Run In-game Tactical Rule Extraction
-    print("
-[3/3] IN-GAME TACTICAL IMPACT EVALUATION:")
+    print("\n[3/3] IN-GAME TACTICAL IMPACT EVALUATION:")
     print("-" * 70)
     try:
         from analysis.extract_tactical_rules import evaluate_tactical_rules
@@ -66,8 +54,7 @@ def run_pipeline():
     except Exception as e:
         print(f"Tactical evaluation note: {e}")
 
-    print("
-" + "=" * 70)
+    print("\n" + "=" * 70)
     print("  ANALYSIS PIPELINE COMPLETE")
     print("=" * 70)
 
