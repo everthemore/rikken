@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  rikken-web:
+    build: .
+    container_name: rikken_ai_web
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./checkpoints:/app/checkpoints:ro
+      - ./eval_history.json:/app/eval_history.json:ro
+    environment:
+      - PYTHONUNBUFFERED=1

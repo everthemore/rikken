@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rikken AI — Play with & against Neural Networks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/table.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navbar -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="brand">
+                    <span class="suit-icons">♠ ♥ ♦ ♣</span>
+                    <span class="brand-title">Rikken<span class="ai-badge">AI</span></span>
+                </div>
+                <div class="game-status-badge" id="game-status-badge">Phase: BIDDING</div>
+            </div>
+
+            <div class="header-center">
+                <div class="active-contract-pill" id="contract-pill">
+                    <span class="pill-label">Contract:</span>
+                    <span class="pill-val" id="pill-contract-name">No Bid</span>
+                    <span class="trump-badge" id="pill-trump-badge" style="display: none;">Trump: <span id="pill-trump-val">None</span></span>
+                    <span class="partner-badge" id="pill-partner-badge" style="display: none;">Ace: <span id="pill-partner-val">None</span></span>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <div class="control-group">
+                    <label for="ai-diff-select" class="control-label">AI Engine:</label>
+                    <select id="ai-diff-select" class="styled-select">
+                        <option value="neural_master">Neural Master (BVN + BN + ISMCTS)</option>
+                        <option value="neural_fast">Neural Fast (50 Rollouts)</option>
+                        <option value="heuristic">Heuristic Baseline</option>
+                    </select>
+                </div>
+                <button class="btn btn-secondary" id="btn-coach-toggle" title="Toggle Real-time AI Hand Valuation">
+                    <span class="btn-icon">💡</span> AI Coach
+                </button>
+                <button class="btn btn-primary" id="btn-new-game">
+                    <span class="btn-icon">🔄</span> New Game
+                </button>
+                <a href="/docs" target="_blank" class="btn btn-icon-only" title="Documentation">📚</a>
+            </div>
+        </header>
+
+        <!-- Main Layout Area -->
+        <main class="main-content">
+            <!-- Card Table Container -->
+            <div class="table-wrapper">
+                <div class="card-table" id="card-table">
+                    <div class="felt-texture"></div>
+
+                    <!-- Player North (AI 2) -->
+                    <div class="player-zone player-north" id="player-zone-2">
+                        <div class="player-avatar">
+                            <div class="avatar-ring"></div>
+                            <span class="avatar-icon">🤖</span>
+                            <span class="avatar-name">North (AI 2)</span>
+                            <span class="trick-counter" id="tricks-won-2">0 tricks</span>
+                        </div>
+                        <div class="hand-preview" id="hand-preview-2"></div>
+                        <div class="action-bubble" id="action-bubble-2"></div>
+                    </div>
+
+                    <!-- Player West (AI 1) -->
+                    <div class="player-zone player-west" id="player-zone-1">
+                        <div class="player-avatar">
+                            <div class="avatar-ring"></div>
+                            <span class="avatar-icon">🤖</span>
+                            <span class="avatar-name">West (AI 1)</span>
+                            <span class="trick-counter" id="tricks-won-1">0 tricks</span>
+                        </div>
+                        <div class="hand-preview" id="hand-preview-1"></div>
+                        <div class="action-bubble" id="action-bubble-1"></div>
+                    </div>
+
+                    <!-- Player East (AI 3) -->
+                    <div class="player-zone player-east" id="player-zone-3">
+                        <div class="player-avatar">
+                            <div class="avatar-ring"></div>
+                            <span class="avatar-icon">🤖</span>
+                            <span class="avatar-name">East (AI 3)</span>
+                            <span class="trick-counter" id="tricks-won-3">0 tricks</span>
+                        </div>
+                        <div class="hand-preview" id="hand-preview-3"></div>
+                        <div class="action-bubble" id="action-bubble-3"></div>
+                    </div>
+
+                    <!-- Center Trick Area -->
+                    <div class="center-trick-area" id="trick-area">
+                        <div class="trick-felt-ring"></div>
+                        <div class="trick-slot slot-north" id="trick-slot-2"></div>
+                        <div class="trick-slot slot-west" id="trick-slot-1"></div>
+                        <div class="trick-slot slot-east" id="trick-slot-3"></div>
+                        <div class="trick-slot slot-south" id="trick-slot-0"></div>
+                        
+                        <div class="trick-info-overlay" id="trick-info-overlay">
+                            <span class="trick-num" id="trick-num-display">Trick 1 / 13</span>
+                            <span class="trick-leader" id="trick-leader-display">Lead: South</span>
+                        </div>
+                    </div>
+
+                    <!-- Player South (Human You) -->
+                    <div class="player-zone player-south" id="player-zone-0">
+                        <div class="south-controls">
+                            <div class="player-avatar human-avatar">
+                                <div class="avatar-ring"></div>
+                                <span class="avatar-icon">🧑</span>
+                                <span class="avatar-name">You (South)</span>
+                                <span class="trick-counter" id="tricks-won-0">0 tricks</span>
+                            </div>
+                            <div class="piek-target-pill" id="piek-target-pill" style="display: none;">
+                                <span class="piek-label">Piek Target:</span>
+                                <span class="piek-val" id="piek-val-display">1 Trick</span>
+                            </div>
+                        </div>
+
+                        <!-- Human Hand Cards -->
+                        <div class="human-hand-container" id="human-hand">
+                            <!-- Injected by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar: XAI Inspector & Live Beliefs -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-tabs">
+                    <button class="tab-btn active" data-tab="xai-beliefs">🧠 XAI Beliefs</button>
+                    <button class="tab-btn" data-tab="ai-coach">💡 AI Coach</button>
+                    <button class="tab-btn" data-tab="game-log">📜 Game Log</button>
+                </div>
+
+                <!-- Tab 1: XAI Belief Heatmap -->
+                <div class="tab-content active" id="tab-xai-beliefs">
+                    <div class="sidebar-section">
+                        <h4 class="section-title">Belief Network Card Heatmap</h4>
+                        <p class="section-desc">AI's probabilistic estimation of unknown opponent hands:</p>
+                        
+                        <div class="opponent-belief-selector">
+                            <button class="btn-sub active" data-opp="player_1">West (AI 1)</button>
+                            <button class="btn-sub" data-opp="player_2">North (AI 2)</button>
+                            <button class="btn-sub" data-opp="player_3">East (AI 3)</button>
+                        </div>
+
+                        <div class="belief-matrix" id="belief-matrix">
+                            <!-- Injected by JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h4 class="section-title">Inferred Void Matrix</h4>
+                        <div class="void-matrix-grid" id="void-matrix-grid">
+                            <!-- Injected by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: AI Coach Valuation -->
+                <div class="tab-content" id="tab-ai-coach">
+                    <div class="sidebar-section">
+                        <h4 class="section-title">BVN Hand Expected Value</h4>
+                        <p class="section-desc">Transformer valuation for legal bids on your hand:</p>
+                        <div class="coach-ev-list" id="coach-ev-list">
+                            <!-- Injected by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Game Log -->
+                <div class="tab-content" id="tab-game-log">
+                    <div class="sidebar-section">
+                        <h4 class="section-title">Match Timeline</h4>
+                        <div class="log-stream" id="log-stream"></div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Modal: Bidding Dialog -->
+    <div class="modal-backdrop" id="bidding-modal" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Select Your Bid</h3>
+                <span class="modal-subtitle">14-Contract Dutch Rikken Ladder</span>
+            </div>
+            
+            <div class="bidding-grid" id="bidding-buttons-container">
+                <!-- Injected by JavaScript -->
+            </div>
+
+            <div class="coach-hint-box" id="modal-coach-hint" style="display: none;">
+                <span class="hint-icon">💡</span>
+                <span class="hint-text" id="modal-coach-hint-text"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Trump & Vraagaas Declaration -->
+    <div class="modal-backdrop" id="declaration-modal" style="display: none;">
+        <div class="modal-card declaration-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Declare Trump & Partner</h3>
+                <span class="modal-subtitle" id="decl-contract-subtitle">Contract: RIK</span>
+            </div>
+
+            <div class="declaration-form">
+                <div class="decl-section">
+                    <label class="decl-label">Choose Trump Suit:</label>
+                    <div class="suit-picker" id="trump-suit-picker">
+                        <button class="btn-suit" data-suit="3"><span class="suit-icon black">♠</span> Spades</button>
+                        <button class="btn-suit" data-suit="2"><span class="suit-icon red">♥</span> Hearts</button>
+                        <button class="btn-suit" data-suit="1"><span class="suit-icon red">♦</span> Diamonds</button>
+                        <button class="btn-suit" data-suit="0"><span class="suit-icon black">♣</span> Clubs</button>
+                    </div>
+                </div>
+
+                <div class="decl-section" id="vraagaas-section" style="display: none;">
+                    <label class="decl-label">Call Partner Ace (Vraagaas):</label>
+                    <div class="suit-picker" id="vraagaas-suit-picker">
+                        <button class="btn-suit" data-suit="3"><span class="suit-icon black">♠</span> Ace of Spades</button>
+                        <button class="btn-suit" data-suit="2"><span class="suit-icon red">♥</span> Hearts (Ace)</button>
+                        <button class="btn-suit" data-suit="1"><span class="suit-icon red">♦</span> Diamonds (Ace)</button>
+                        <button class="btn-suit" data-suit="0"><span class="suit-icon black">♣</span> Clubs (Ace)</button>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-block" id="btn-confirm-declaration" disabled>Confirm Declaration</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Game Over Results -->
+    <div class="modal-backdrop" id="gameover-modal" style="display: none;">
+        <div class="modal-card gameover-card">
+            <div class="gameover-banner" id="gameover-banner">🎉 VICTORY!</div>
+            <h3 class="gameover-contract" id="gameover-contract-name">Contract: RIK (+8 Tricks)</h3>
+
+            <div class="scoreboard-grid">
+                <div class="score-card">
+                    <span class="score-player">You (South)</span>
+                    <span class="score-tricks" id="go-tricks-0">8 Tricks</span>
+                    <span class="score-points" id="go-points-0">+16 pts</span>
+                </div>
+                <div class="score-card">
+                    <span class="score-player">West (AI 1)</span>
+                    <span class="score-tricks" id="go-tricks-1">2 Tricks</span>
+                    <span class="score-points" id="go-points-1">-8 pts</span>
+                </div>
+                <div class="score-card">
+                    <span class="score-player">North (AI 2)</span>
+                    <span class="score-tricks" id="go-tricks-2">2 Tricks</span>
+                    <span class="score-points" id="go-points-2">-8 pts</span>
+                </div>
+                <div class="score-card">
+                    <span class="score-player">East (AI 3)</span>
+                    <span class="score-tricks" id="go-tricks-3">1 Tricks</span>
+                    <span class="score-points" id="go-points-3">-8 pts</span>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-block" id="btn-play-again">Play Next Game</button>
+        </div>
+    </div>
+
+    <!-- Client Script -->
+    <script src="/js/game.js"></script>
+</body>
+</html>

@@ -219,6 +219,22 @@ def cmd_loop(args):
         history_file=args.history_file,
     )
 
+def cmd_web(args):
+    """Start the interactive Rikken playable web application."""
+    import webbrowser
+    from webapp.server import run_server
+
+    port = args.port
+    host = args.host
+    url = f"http://localhost:{port}"
+    if not args.no_browser:
+        try:
+            webbrowser.open(url)
+        except Exception:
+            pass
+    run_server(host=host, port=port)
+
+
 def cmd_docs(args):
     """Start a local HTTP server to view the interactive documentation website."""
     import http.server
@@ -299,6 +315,12 @@ def main():
     p_loop.add_argument('--buffer-window',   type=int, default=config.REPLAY_BUFFER_WINDOW)
     p_loop.add_argument('--history-file',     type=str, default='eval_history.json')
 
+    # web
+    p_web = sub.add_parser('web', help='Start interactive playable web application')
+    p_web.add_argument('--port', type=int, default=8080, help='Port to serve web app on (default: 8080)')
+    p_web.add_argument('--host', type=str, default='0.0.0.0', help='Host to bind server to (default: 0.0.0.0)')
+    p_web.add_argument('--no-browser', action='store_true', help='Do not automatically open browser')
+
     # docs
     p_docs = sub.add_parser('docs', help='Serve the interactive documentation website')
     p_docs.add_argument('--port', type=int, default=8000, help='Port to serve docs on (default: 8000)')
@@ -322,6 +344,8 @@ def main():
         'generate':  cmd_generate,
         'train-bvn': cmd_train_bvn,
         'train-bn':  cmd_train_bn,
+        'web':       cmd_web,
+        'serve':     cmd_web,
         'docs':      cmd_docs,
         'tournament': cmd_tournament,
         'loop':       cmd_loop,
