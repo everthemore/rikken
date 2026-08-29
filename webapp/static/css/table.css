@@ -993,3 +993,96 @@ body {
 .human-hand-container .card {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
 }
+
+
+/* Bid Tags & Role Badges */
+.player-bid-tag {
+    background: rgba(59, 130, 246, 0.2);
+    border: 1px solid var(--border-accent);
+    color: #93c5fd;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.player-bid-tag.passed {
+    background: rgba(148, 163, 184, 0.15);
+    border-color: rgba(148, 163, 184, 0.3);
+    color: var(--text-muted);
+}
+
+.player-bid-tag.active-bid {
+    background: rgba(251, 191, 36, 0.2);
+    border-color: var(--gold);
+    color: var(--gold);
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+}
+
+.player-role-badge {
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 6px;
+    margin-left: 6px;
+    letter-spacing: 0.5px;
+}
+
+.player-role-badge.role-declarer {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: white;
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.6);
+    border: 1px solid #c084fc;
+}
+
+.player-role-badge.role-partner {
+    background: linear-gradient(135deg, #0284c7, #38bdf8);
+    color: white;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+}
+
+.player-role-badge.role-defender {
+    background: rgba(30, 41, 59, 0.8);
+    color: #94a3b8;
+    border: 1px solid var(--border-glass);
+}
+
+/* Modal Bidding Strip */
+.bidding-table-strip {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-sm);
+}
+
+.bid-strip-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.75rem;
+    flex: 1;
+}
+
+.bid-strip-item .strip-player {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.bid-strip-item .strip-bid {
+    color: var(--text-primary);
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+}
+
+.bid-strip-item.you-strip .strip-bid {
+    color: var(--gold);
+}

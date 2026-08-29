@@ -62,7 +62,7 @@
                             <div class="avatar-ring"></div>
                             <span class="avatar-icon">🤖</span>
                             <span class="avatar-name">North (AI 2)</span><span class="leader-badge" id="leader-badge-2" style="display:none;">👑 LEADER</span>
-                            <span class="trick-counter" id="tricks-won-2">0 tricks</span>
+                            <span class="trick-counter" id="tricks-won-2">0 tricks</span><span class="player-bid-tag" id="bid-tag-2"></span><span class="player-role-badge" id="role-badge-2"></span>
                         </div>
                         <div class="hand-preview" id="hand-preview-2"></div>
                         <div class="action-bubble" id="action-bubble-2"></div>
@@ -74,7 +74,7 @@
                             <div class="avatar-ring"></div>
                             <span class="avatar-icon">🤖</span>
                             <span class="avatar-name">West (AI 1)</span><span class="leader-badge" id="leader-badge-1" style="display:none;">👑 LEADER</span>
-                            <span class="trick-counter" id="tricks-won-1">0 tricks</span>
+                            <span class="trick-counter" id="tricks-won-1">0 tricks</span><span class="player-bid-tag" id="bid-tag-1"></span><span class="player-role-badge" id="role-badge-1"></span>
                         </div>
                         <div class="hand-preview" id="hand-preview-1"></div>
                         <div class="action-bubble" id="action-bubble-1"></div>
@@ -86,7 +86,7 @@
                             <div class="avatar-ring"></div>
                             <span class="avatar-icon">🤖</span>
                             <span class="avatar-name">East (AI 3)</span><span class="leader-badge" id="leader-badge-3" style="display:none;">👑 LEADER</span>
-                            <span class="trick-counter" id="tricks-won-3">0 tricks</span>
+                            <span class="trick-counter" id="tricks-won-3">0 tricks</span><span class="player-bid-tag" id="bid-tag-3"></span><span class="player-role-badge" id="role-badge-3"></span>
                         </div>
                         <div class="hand-preview" id="hand-preview-3"></div>
                         <div class="action-bubble" id="action-bubble-3"></div>
@@ -113,7 +113,7 @@
                                 <div class="avatar-ring"></div>
                                 <span class="avatar-icon">🧑</span>
                                 <span class="avatar-name">You (South)</span><span class="leader-badge" id="leader-badge-0" style="display:none;">👑 LEADER</span>
-                                <span class="trick-counter" id="tricks-won-0">0 tricks</span>
+                                <span class="trick-counter" id="tricks-won-0">0 tricks</span><span class="player-bid-tag" id="bid-tag-0"></span><span class="player-role-badge" id="role-badge-0"></span>
                             </div>
                             <div class="piek-target-pill" id="piek-target-pill" style="display: none;">
                                 <span class="piek-label">Piek Target:</span>
@@ -190,6 +190,12 @@
             <div class="modal-header">
                 <h3 class="modal-title">Select Your Bid</h3>
                 <span class="modal-subtitle">14-Contract Dutch Rikken Ladder</span>
+                <div class="bidding-table-strip" id="bidding-table-strip">
+                    <div class="bid-strip-item" id="strip-bid-1"><span class="strip-player">West:</span> <span class="strip-bid" id="strip-val-1">—</span></div>
+                    <div class="bid-strip-item" id="strip-bid-2"><span class="strip-player">North:</span> <span class="strip-bid" id="strip-val-2">—</span></div>
+                    <div class="bid-strip-item" id="strip-bid-3"><span class="strip-player">East:</span> <span class="strip-bid" id="strip-val-3">—</span></div>
+                    <div class="bid-strip-item you-strip" id="strip-bid-0"><span class="strip-player">You:</span> <span class="strip-bid" id="strip-val-0">Your Turn</span></div>
+                </div>
             </div>
             
             <div class="bidding-grid" id="bidding-buttons-container">

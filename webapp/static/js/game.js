@@ -423,7 +423,8 @@ class RikkenGameApp {
         this.statusBadge.style.color = isMyTurn ? 'var(--gold)' : 'var(--blue)';
 
         const c = this.state.contract;
-        this.contractName.textContent = c.name !== 'NO_BID' ? c.name : 'No Bid';
+        const declarerName = c.declarer >= 0 ? ['You (South)', 'West (AI 1)', 'North (AI 2)', 'East (AI 3)'][c.declarer] : null;
+        this.contractName.textContent = c.name !== 'NO_BID' ? (declarerName ? `${c.name} (${declarerName})` : c.name) : 'No Bid';
 
         if (c.is_trump && c.trump_suit >= 0) {
             this.trumpBadge.style.display = 'inline-block';
@@ -456,6 +457,9 @@ class RikkenGameApp {
         const leader = this.state.trick_leader;
         const current = this.state.current_player;
 
+        const bids = this.state.player_bids || [];
+        const roles = this.state.roles || [];
+
         for (let p = 0; p < 4; p++) {
             if (this.leaderBadges[p]) {
                 this.leaderBadges[p].style.display = (p === leader && this.state.phase === 'TRICK_TAKING') ? 'inline-block' : 'none';
@@ -467,6 +471,49 @@ class RikkenGameApp {
                     avatar.classList.toggle('active-turn', p === current && this.state.phase !== 'TERMINAL');
                 }
             }
+
+            // Update Bid Tag (shown during BIDDING)
+            const bidTag = document.getElementById(`bid-tag-${p}`);
+            if (bidTag) {
+                if (this.state.phase === 'BIDDING') {
+                    const pBid = bids[p];
+                    if (pBid && pBid.latest_name && pBid.latest_name !== '—') {
+                        bidTag.style.display = 'inline-block';
+                        bidTag.textContent = pBid.latest_name;
+                        bidTag.className = `player-bid-tag ${pBid.has_passed ? 'passed' : 'active-bid'}`;
+                    } else {
+                        bidTag.style.display = 'none';
+                    }
+                } else {
+                    bidTag.style.display = 'none';
+                }
+            }
+
+            // Update Role Badge (shown during TRICK_TAKING / TERMINAL)
+            const roleBadge = document.getElementById(`role-badge-${p}`);
+            if (roleBadge) {
+                if (this.state.phase === 'TRICK_TAKING' || this.state.phase === 'TERMINAL') {
+                    const role = roles[p];
+                    if (role === 'DECLARER') {
+                        roleBadge.style.display = 'inline-block';
+                        roleBadge.textContent = '👑 DECLARER';
+                        roleBadge.className = 'player-role-badge role-declarer';
+                    } else if (role === 'PARTNER') {
+                        roleBadge.style.display = 'inline-block';
+                        roleBadge.textContent = '🤝 PARTNER';
+                        roleBadge.className = 'player-role-badge role-partner';
+                    } else if (role === 'DEFENDER') {
+                        roleBadge.style.display = 'inline-block';
+                        roleBadge.textContent = '🛡️ DEFENDER';
+                        roleBadge.className = 'player-role-badge role-defender';
+                    } else {
+                        roleBadge.style.display = 'none';
+                    }
+                } else {
+                    roleBadge.style.display = 'none';
+                }
+            }
+
             this.tricksWonDisplays[p].textContent = `${this.state.tricks_won[p]} tricks`;
             if (p > 0) {
                 const count = this.state.hands_count[p];
@@ -584,6 +631,20 @@ class RikkenGameApp {
         this.biddingModal.style.display = 'flex';
         this.biddingContainer.innerHTML = '';
         const legalBids = (this.state.legal_bids || []).map(b => b.id);
+        const bids = this.state.player_bids || [];
+
+        // Populate Current Round Bids Strip
+        for (let p = 0; p < 4; p++) {
+            const el = document.getElementById(`strip-val-${p}`);
+            if (el) {
+                const pBid = bids[p];
+                if (p === 0) {
+                    el.textContent = pBid && pBid.latest_name && pBid.latest_name !== '—' ? `${pBid.latest_name} (Your Turn)` : 'Your Turn';
+                } else {
+                    el.textContent = pBid && pBid.latest_name ? pBid.latest_name : '—';
+                }
+            }
+        }
 
         const allContracts = [
             { id: 0, name: 'PAS', target: 'Pass turn' },

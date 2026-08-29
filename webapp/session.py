@@ -76,6 +76,7 @@ class GameSession:
         self.last_action_time = time.time()
         self.completed_tricks: List[Dict[str, Any]] = []
         self.last_completed_trick: Optional[Dict[str, Any]] = None
+        self.bidding_history: List[Dict[str, Any]] = []
 
     def advance_ai_turns(self) -> None:
         """Advance all AI turns until human player must act or game terminates."""
@@ -99,6 +100,7 @@ class GameSession:
         if self.state.phase == Phase.BIDDING:
             bid_action = agent.act(self.state)
             c_name = Contract(bid_action).name if bid_action >= 0 else "PAS"
+            self.bidding_history.append({"seat": int(curr), "bid_id": int(bid_action), "bid_name": c_name})
             self.log.append(f"Player {curr} ({self._seat_name(curr)}) bids: {c_name}")
             self.state, reward = self.game.step(self.state, bid_action)
             event["action"] = "bid"
@@ -164,6 +166,7 @@ class GameSession:
             return False, f"Illegal bid: {Contract(contract_val).name}"
 
         c_name = Contract(contract_val).name if contract_val >= 0 else "PAS"
+        self.bidding_history.append({"seat": int(self.human_seat), "bid_id": int(contract_val), "bid_name": c_name})
         self.log.append(f"You (Player {self.human_seat}) bid: {c_name}")
         self.state, reward = self.game.step(self.state, contract_val)
 
@@ -239,8 +242,34 @@ class GameSession:
             and self.state.declarer == self.human_seat
         )
 
+        player_bids = []
+        roles = []
+        for p in range(4):
+            curr_val = int(self.state.bids[p])
+            curr_name = Contract(curr_val).name if curr_val > 0 else ("PAS" if curr_val == 0 else "—")
+            history = [b["bid_name"] for b in self.bidding_history if b["seat"] == p]
+            player_bids.append({
+                "seat": p,
+                "latest_id": curr_val,
+                "latest_name": curr_name,
+                "history": history,
+                "has_passed": curr_val == 0,
+            })
+
+            # Determine role during TRICK_TAKING
+            if self.state.phase == Phase.TRICK_TAKING or self.state.phase == Phase.TERMINAL:
+                if self.state.declarer_mask[p] or p == self.state.declarer:
+                    roles.append("DECLARER")
+                elif p == self.state.partner and (self.state.partner_revealed or self.state.contract == Contract.TROELA):
+                    roles.append("PARTNER")
+                else:
+                    roles.append("DEFENDER")
+            else:
+                roles.append("PASSED" if curr_val == 0 else "BIDDER")
         return {
             "phase": self.state.phase.name,
+            "player_bids": player_bids,
+            "roles": roles,
             "current_player": int(self.state.current_player),
             "human_seat": int(self.human_seat),
             "is_human_turn": bool(self.state.current_player == self.human_seat and self.state.phase != Phase.TERMINAL),
