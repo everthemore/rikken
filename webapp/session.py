@@ -75,6 +75,7 @@ class GameSession:
         self.log: List[str] = [f"Game initialized. Human is Player {human_seat} (South)."]
         self.last_action_time = time.time()
         self.completed_tricks: List[Dict[str, Any]] = []
+        self.last_completed_trick: Optional[Dict[str, Any]] = None
 
     def advance_ai_turns(self) -> None:
         """Advance all AI turns until human player must act or game terminates."""
@@ -139,14 +140,17 @@ class GameSession:
 
             if self.state.trick_count > prev_trick_count or self.state.phase == Phase.TERMINAL:
                 event["trick_complete"] = True
-                event["winner"] = self.state.trick_leader
-                event["trick_num"] = prev_trick_count + 1
-                self.completed_tricks.append({
+                event["winner"] = int(self.state.trick_leader)
+                event["trick_num"] = int(prev_trick_count + 1)
+                event["completed_cards"] = [self._format_card(c) if c >= 0 else None for c in trick_cards]
+                completed_info = {
                     "trick_num": prev_trick_count + 1,
                     "leader": prev_leader,
                     "winner": self.state.trick_leader,
                     "cards": trick_cards,
-                })
+                }
+                self.last_completed_trick = completed_info
+                self.completed_tricks.append(completed_info)
 
         return event
 
@@ -208,12 +212,14 @@ class GameSession:
         self.state, reward = self.game.step(self.state, card)
 
         if self.state.trick_count > prev_trick_count or self.state.phase == Phase.TERMINAL:
-            self.completed_tricks.append({
+            completed_info = {
                 "trick_num": prev_trick_count + 1,
                 "leader": prev_leader,
                 "winner": self.state.trick_leader,
                 "cards": trick_cards,
-            })
+            }
+            self.last_completed_trick = completed_info
+            self.completed_tricks.append(completed_info)
 
         return True, "Card played"
 
@@ -270,6 +276,12 @@ class GameSession:
             "rewards": self.state.rewards.tolist() if hasattr(self.state, 'rewards') else None,
             "log": self.log[-15:],
             "completed_tricks": self.completed_tricks,
+            "last_completed_trick": {
+                "trick_num": int(self.last_completed_trick["trick_num"]),
+                "leader": int(self.last_completed_trick["leader"]),
+                "winner": int(self.last_completed_trick["winner"]),
+                "cards": [self._format_card(c) if c >= 0 else None for c in self.last_completed_trick["cards"]],
+            } if self.last_completed_trick is not None else None,
         }
 
     def get_ai_advice(self) -> Dict[str, Any]:
@@ -322,12 +334,18 @@ class GameSession:
             return {"available": False, "message": "Belief Network not loaded."}
 
         p = self.human_seat
+        trick_one_hot = np.zeros(52, dtype=np.int8)
+        for c in self.state.current_trick:
+            if c >= 0:
+                trick_one_hot[c] = 1
+
         probs = agent.bn.predict(
             own_hand=self.state.hands[p],
             played_cards=self.state.played_cards,
             bid_history=self.state.bids,
-            current_trick=self.state.current_trick,
+            current_trick=trick_one_hot,
             void_matrix=self.state.void_matrix,
+            my_seat=p,
             device="cpu",
         )
 

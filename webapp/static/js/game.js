@@ -1,5 +1,5 @@
 /**
- * webapp/static/js/game.js — Interactive Client Controller with Step-by-Step AI Delays & Leader Badges
+ * webapp/static/js/game.js — Interactive Client Controller with Full 4-Card Trick Delay & Leader Badges
  */
 
 class RikkenAudio {
@@ -60,7 +60,8 @@ class RikkenGameApp {
         this.selectedTrump = -1;
         this.selectedVraagaas = -1;
         this.draggedCardId = null;
-        this.isProcessingAI = false;
+        this.isProcessing = false;
+        this.showingTrickResolution = false;
 
         this.initDOMElements();
         this.bindEvents();
@@ -78,11 +79,10 @@ class RikkenGameApp {
         this.btnCoachToggle = document.getElementById('btn-coach-toggle');
         this.btnNewGame = document.getElementById('btn-new-game');
 
-        this.tableWrapper = document.querySelector('.table-wrapper');
         this.cardTable = document.getElementById('card-table');
         this.trickArea = document.getElementById('trick-area');
         this.humanHandContainer = document.getElementById('human-hand');
-        
+
         this.playerZones = {
             0: document.getElementById('player-zone-0'),
             1: document.getElementById('player-zone-1'),
@@ -155,7 +155,7 @@ class RikkenGameApp {
         clearTimeout(this.toastTimer);
         this.toastTimer = setTimeout(() => {
             this.toast.className = 'game-toast';
-        }, 2200);
+        }, 2500);
     }
 
     showActionBubble(player, text) {
@@ -163,7 +163,7 @@ class RikkenGameApp {
         const bubble = this.actionBubbles[player];
         bubble.textContent = text;
         bubble.classList.add('show');
-        setTimeout(() => bubble.classList.remove('show'), 2000);
+        setTimeout(() => bubble.classList.remove('show'), 2200);
     }
 
     bindEvents() {
@@ -240,7 +240,8 @@ class RikkenGameApp {
     }
 
     async startNewGame() {
-        this.isProcessingAI = false;
+        this.isProcessing = false;
+        this.showingTrickResolution = false;
         const diff = this.aiDiffSelect.value;
         const res = await fetch('/api/game/new', {
             method: 'POST',
@@ -295,7 +296,7 @@ class RikkenGameApp {
     }
 
     async playCard(cardId) {
-        if (!this.state || this.isProcessingAI) return;
+        if (!this.state || this.isProcessing || this.showingTrickResolution) return;
         if (this.state.phase !== 'TRICK_TAKING') {
             this.showToast("Bidding is still in progress.", true);
             return;
@@ -309,7 +310,9 @@ class RikkenGameApp {
             return;
         }
 
+        this.isProcessing = true;
         this.audio.playCardSnap();
+
         const res = await fetch('/api/game/play', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -317,24 +320,66 @@ class RikkenGameApp {
         });
         const data = await res.json();
         if (data.success) {
+            const prevState = this.state;
             this.state = data.state;
-            this.updateUI();
+
+            // If this human play completed a 4th-card trick:
+            if (this.state.last_completed_trick && this.state.last_completed_trick.trick_num > prevState.trick_count) {
+                await this.animateTrickResolution(this.state.last_completed_trick);
+            } else {
+                this.updateUI();
+            }
+
+            this.isProcessing = false;
             this.checkAndStepAI();
         } else {
+            this.isProcessing = false;
             this.showToast(data.message || "Failed to play card", true);
         }
     }
 
+    async animateTrickResolution(completedTrick) {
+        this.showingTrickResolution = true;
+        const winner = completedTrick.winner;
+        const winnerName = ['You (South)', 'West (AI 1)', 'North (AI 2)', 'East (AI 3)'][winner];
+
+        // 1. Render all 4 completed cards
+        this.renderTrickCards(completedTrick.cards);
+
+        // 2. Highlight winning card
+        if (this.trickSlots[winner]) {
+            this.trickSlots[winner].classList.add('winning-card');
+        }
+        this.audio.playTrickWin();
+        this.showToast(`Trick ${completedTrick.trick_num} won by ${winnerName}!`);
+
+        // 3. PAUSE FOR 1.5 SECONDS so user can inspect all 4 cards
+        await new Promise(r => setTimeout(r, 1500));
+
+        // 4. Sweep animation towards winner seat
+        this.trickArea.className = `center-trick-area sweep-to-${winner}`;
+        await new Promise(r => setTimeout(r, 450));
+
+        // 5. Reset trick area
+        this.trickArea.className = 'center-trick-area';
+        for (let i = 0; i < 4; i++) {
+            this.trickSlots[i].innerHTML = '';
+            this.trickSlots[i].classList.remove('winning-card');
+        }
+        this.showingTrickResolution = false;
+        this.updateUI();
+    }
+
     async checkAndStepAI() {
-        if (this.isProcessingAI || !this.state) return;
+        if (this.isProcessing || !this.state) return;
         if (this.state.phase === 'TERMINAL' || this.state.is_human_turn || this.state.needs_declaration) {
             return;
         }
 
-        this.isProcessingAI = true;
+        this.isProcessing = true;
         while (this.state && !this.state.is_human_turn && this.state.phase !== 'TERMINAL' && !this.state.needs_declaration) {
-            // Delay before AI move so player can follow along
-            await new Promise(r => setTimeout(r, 650));
+            // Natural human pacing delay (750ms)
+            await new Promise(r => setTimeout(r, 750));
 
             const res = await fetch('/api/game/step_ai', { method: 'POST' });
             const data = await res.json();
@@ -351,37 +396,20 @@ class RikkenGameApp {
             }
 
             this.state = data.state;
-            this.updateUI();
 
-            // If trick completed (all 4 cards played):
-            if (ev.trick_complete) {
-                const winner = ev.winner;
-                const winnerName = ['You (South)', 'West (AI 1)', 'North (AI 2)', 'East (AI 3)'][winner];
-                
-                // Highlight winning card in slot
-                if (this.trickSlots[winner]) {
-                    this.trickSlots[winner].classList.add('winning-card');
-                }
-                this.audio.playTrickWin();
-                this.showToast(`Trick ${ev.trick_num} won by ${winnerName}!`);
-
-                // Hold cards on the felt for 1400ms so human can inspect them
-                await new Promise(r => setTimeout(r, 1400));
-
-                // Animate sweep towards winner's seat
-                this.trickArea.className = `center-trick-area sweep-to-${winner}`;
-                await new Promise(r => setTimeout(r, 450));
-
-                // Reset trick area
-                this.trickArea.className = 'center-trick-area';
-                for (let i = 0; i < 4; i++) {
-                    this.trickSlots[i].innerHTML = '';
-                    this.trickSlots[i].classList.remove('winning-card');
-                }
+            // If trick completed on this AI move:
+            if (ev.trick_complete && ev.completed_cards) {
+                const compInfo = {
+                    cards: ev.completed_cards,
+                    winner: ev.winner,
+                    trick_num: ev.trick_num
+                };
+                await this.animateTrickResolution(compInfo);
+            } else {
                 this.updateUI();
             }
         }
-        this.isProcessingAI = false;
+        this.isProcessing = false;
         this.updateUI();
     }
 
@@ -429,11 +457,9 @@ class RikkenGameApp {
         const current = this.state.current_player;
 
         for (let p = 0; p < 4; p++) {
-            // Update Leader Badge
             if (this.leaderBadges[p]) {
                 this.leaderBadges[p].style.display = (p === leader && this.state.phase === 'TRICK_TAKING') ? 'inline-block' : 'none';
             }
-            // Update Active Turn glow
             const zone = this.playerZones[p];
             if (zone) {
                 const avatar = zone.querySelector('.player-avatar');
@@ -441,7 +467,6 @@ class RikkenGameApp {
                     avatar.classList.toggle('active-turn', p === current && this.state.phase !== 'TERMINAL');
                 }
             }
-            // Trick count display
             this.tricksWonDisplays[p].textContent = `${this.state.tricks_won[p]} tricks`;
             if (p > 0) {
                 const count = this.state.hands_count[p];
@@ -452,8 +477,10 @@ class RikkenGameApp {
         // 3. Render Human Hand
         this.renderHumanHand();
 
-        // 4. Render Trick Pile
-        this.renderTrickPile();
+        // 4. Render Trick Pile (if not currently holding a completed trick)
+        if (!this.showingTrickResolution) {
+            this.renderTrickCards(this.state.current_trick);
+        }
 
         // 5. Modals Handling
         if (this.state.phase === 'BIDDING' && this.state.is_human_turn) {
@@ -468,7 +495,7 @@ class RikkenGameApp {
             this.declModal.style.display = 'none';
         }
 
-        if (this.state.phase === 'TERMINAL') {
+        if (this.state.phase === 'TERMINAL' && !this.showingTrickResolution) {
             this.showGameOverModal();
         }
 
@@ -482,7 +509,7 @@ class RikkenGameApp {
         this.humanHandContainer.innerHTML = '';
         const cards = this.state.human_hand || [];
         const legalPlays = this.state.legal_plays || [];
-        const isTurn = this.state.is_human_turn && this.state.phase === 'TRICK_TAKING';
+        const isTurn = this.state.is_human_turn && this.state.phase === 'TRICK_TAKING' && !this.isProcessing && !this.showingTrickResolution;
 
         cards.forEach((c, idx) => {
             const cardEl = document.createElement('div');
@@ -525,13 +552,13 @@ class RikkenGameApp {
         });
     }
 
-    renderTrickPile() {
+    renderTrickCards(trickCards) {
         this.trickNumDisplay.textContent = `Trick ${Math.min(13, this.state.trick_count + 1)} / 13`;
         this.trickLeaderDisplay.textContent = `Lead: ${['South', 'West', 'North', 'East'][this.state.trick_leader]}`;
 
         for (let p = 0; p < 4; p++) {
             const slot = this.trickSlots[p];
-            const c = this.state.current_trick[p];
+            const c = trickCards ? trickCards[p] : null;
             if (c) {
                 const colorClass = c.is_red ? 'red' : 'black';
                 slot.innerHTML = `
