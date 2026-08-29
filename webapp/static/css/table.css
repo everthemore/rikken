@@ -879,3 +879,70 @@ body {
     opacity: 0.5;
     transform: scale(0.95);
 }
+
+
+/* Leader Badge */
+.leader-badge {
+    background: linear-gradient(135deg, #d97706, #fbbf24);
+    color: #0f172a;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 6px;
+    margin-left: 6px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
+    animation: leaderPulse 2s infinite ease-in-out;
+}
+
+@keyframes leaderPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 8px rgba(251, 191, 36, 0.5); }
+    50% { transform: scale(1.06); box-shadow: 0 0 16px rgba(251, 191, 36, 0.85); }
+}
+
+/* Active Turn Ring */
+.player-avatar.active-turn {
+    border-color: #38bdf8;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.6);
+    animation: activeTurnGlow 1.5s infinite alternate;
+}
+
+@keyframes activeTurnGlow {
+    from { box-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
+    to { box-shadow: 0 0 22px rgba(56, 189, 248, 0.85); }
+}
+
+/* Card Play & Sweep Animations */
+.trick-slot .card {
+    animation: cardFlyIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes cardFlyIn {
+    0% { transform: scale(0.6) translateY(20px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.trick-slot.winning-card .card {
+    border: 2px solid var(--gold);
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.8);
+    transform: scale(1.1);
+    z-index: 60;
+}
+
+.center-trick-area.sweep-to-0 {
+    animation: sweepSouth 0.5s ease-in forwards;
+}
+.center-trick-area.sweep-to-1 {
+    animation: sweepWest 0.5s ease-in forwards;
+}
+.center-trick-area.sweep-to-2 {
+    animation: sweepNorth 0.5s ease-in forwards;
+}
+.center-trick-area.sweep-to-3 {
+    animation: sweepEast 0.5s ease-in forwards;
+}
+
+@keyframes sweepSouth { to { transform: translate(-50%, 60%) scale(0.3); opacity: 0; } }
+@keyframes sweepWest  { to { transform: translate(-120%, -50%) scale(0.3); opacity: 0; } }
+@keyframes sweepNorth { to { transform: translate(-50%, -140%) scale(0.3); opacity: 0; } }
+@keyframes sweepEast  { to { transform: translate(40%, -50%) scale(0.3); opacity: 0; } }

@@ -1,5 +1,5 @@
 /**
- * webapp/static/js/game.js — Interactive Client Controller with Drag & Click Card Play
+ * webapp/static/js/game.js — Interactive Client Controller with Step-by-Step AI Delays & Leader Badges
  */
 
 class RikkenAudio {
@@ -20,14 +20,14 @@ class RikkenAudio {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
             osc.type = 'triangle';
-            osc.frequency.setValueAtTime(450, this.ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.08);
+            osc.frequency.setValueAtTime(480, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(130, this.ctx.currentTime + 0.09);
             gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.09);
             osc.connect(gain);
             gain.connect(this.ctx.destination);
             osc.start();
-            osc.stop(this.ctx.currentTime + 0.08);
+            osc.stop(this.ctx.currentTime + 0.09);
         } catch (e) {}
     }
 
@@ -39,13 +39,13 @@ class RikkenAudio {
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(freq, now + i * 0.06);
-                gain.gain.setValueAtTime(0.2, now + i * 0.06);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.06 + 0.2);
+                osc.frequency.setValueAtTime(freq, now + i * 0.07);
+                gain.gain.setValueAtTime(0.22, now + i * 0.07);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.07 + 0.25);
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
-                osc.start(now + i * 0.06);
-                osc.stop(now + i * 0.06 + 0.2);
+                osc.start(now + i * 0.07);
+                osc.stop(now + i * 0.07 + 0.25);
             });
         } catch (e) {}
     }
@@ -59,8 +59,8 @@ class RikkenGameApp {
         this.selectedOpponent = 'player_1';
         this.selectedTrump = -1;
         this.selectedVraagaas = -1;
-        this.prevTrickCount = 0;
         this.draggedCardId = null;
+        this.isProcessingAI = false;
 
         this.initDOMElements();
         this.bindEvents();
@@ -82,6 +82,19 @@ class RikkenGameApp {
         this.cardTable = document.getElementById('card-table');
         this.trickArea = document.getElementById('trick-area');
         this.humanHandContainer = document.getElementById('human-hand');
+        
+        this.playerZones = {
+            0: document.getElementById('player-zone-0'),
+            1: document.getElementById('player-zone-1'),
+            2: document.getElementById('player-zone-2'),
+            3: document.getElementById('player-zone-3'),
+        };
+        this.leaderBadges = {
+            0: document.getElementById('leader-badge-0'),
+            1: document.getElementById('leader-badge-1'),
+            2: document.getElementById('leader-badge-2'),
+            3: document.getElementById('leader-badge-3'),
+        };
         this.trickSlots = {
             0: document.getElementById('trick-slot-0'),
             1: document.getElementById('trick-slot-1'),
@@ -145,6 +158,14 @@ class RikkenGameApp {
         }, 2200);
     }
 
+    showActionBubble(player, text) {
+        if (player === 0 || !this.actionBubbles[player]) return;
+        const bubble = this.actionBubbles[player];
+        bubble.textContent = text;
+        bubble.classList.add('show');
+        setTimeout(() => bubble.classList.remove('show'), 2000);
+    }
+
     bindEvents() {
         this.btnNewGame.addEventListener('click', () => this.startNewGame());
         this.btnPlayAgain.addEventListener('click', () => {
@@ -202,7 +223,7 @@ class RikkenGameApp {
 
         this.btnConfirmDecl.addEventListener('click', () => this.submitDeclaration());
 
-        // Drag and drop onto trick pile / table
+        // Drag & Drop
         [this.trickArea, this.cardTable].forEach(target => {
             target.addEventListener('dragover', (e) => {
                 e.preventDefault();
@@ -219,6 +240,7 @@ class RikkenGameApp {
     }
 
     async startNewGame() {
+        this.isProcessingAI = false;
         const diff = this.aiDiffSelect.value;
         const res = await fetch('/api/game/new', {
             method: 'POST',
@@ -228,9 +250,9 @@ class RikkenGameApp {
         const data = await res.json();
         if (data.success) {
             this.state = data.state;
-            this.prevTrickCount = 0;
             this.updateUI();
-            this.showToast("New hand dealt. Your turn to bid!");
+            this.showToast("New hand dealt!");
+            this.checkAndStepAI();
         }
     }
 
@@ -245,6 +267,7 @@ class RikkenGameApp {
         this.state = data.state;
         this.audio.playCardSnap();
         this.updateUI();
+        this.checkAndStepAI();
     }
 
     validateDeclaration() {
@@ -268,10 +291,11 @@ class RikkenGameApp {
         const data = await res.json();
         this.state = data.state;
         this.updateUI();
+        this.checkAndStepAI();
     }
 
     async playCard(cardId) {
-        if (!this.state) return;
+        if (!this.state || this.isProcessingAI) return;
         if (this.state.phase !== 'TRICK_TAKING') {
             this.showToast("Bidding is still in progress.", true);
             return;
@@ -295,9 +319,70 @@ class RikkenGameApp {
         if (data.success) {
             this.state = data.state;
             this.updateUI();
+            this.checkAndStepAI();
         } else {
             this.showToast(data.message || "Failed to play card", true);
         }
+    }
+
+    async checkAndStepAI() {
+        if (this.isProcessingAI || !this.state) return;
+        if (this.state.phase === 'TERMINAL' || this.state.is_human_turn || this.state.needs_declaration) {
+            return;
+        }
+
+        this.isProcessingAI = true;
+        while (this.state && !this.state.is_human_turn && this.state.phase !== 'TERMINAL' && !this.state.needs_declaration) {
+            // Delay before AI move so player can follow along
+            await new Promise(r => setTimeout(r, 650));
+
+            const res = await fetch('/api/game/step_ai', { method: 'POST' });
+            const data = await res.json();
+            if (!data.success || !data.event || !data.event.stepped) break;
+
+            const ev = data.event;
+            const p = ev.player;
+
+            if (ev.action === 'bid') {
+                this.showActionBubble(p, `Bid: ${ev.bid_name}`);
+            } else if (ev.action === 'play') {
+                this.showActionBubble(p, `Plays ${ev.card.display}`);
+                this.audio.playCardSnap();
+            }
+
+            this.state = data.state;
+            this.updateUI();
+
+            // If trick completed (all 4 cards played):
+            if (ev.trick_complete) {
+                const winner = ev.winner;
+                const winnerName = ['You (South)', 'West (AI 1)', 'North (AI 2)', 'East (AI 3)'][winner];
+                
+                // Highlight winning card in slot
+                if (this.trickSlots[winner]) {
+                    this.trickSlots[winner].classList.add('winning-card');
+                }
+                this.audio.playTrickWin();
+                this.showToast(`Trick ${ev.trick_num} won by ${winnerName}!`);
+
+                // Hold cards on the felt for 1400ms so human can inspect them
+                await new Promise(r => setTimeout(r, 1400));
+
+                // Animate sweep towards winner's seat
+                this.trickArea.className = `center-trick-area sweep-to-${winner}`;
+                await new Promise(r => setTimeout(r, 450));
+
+                // Reset trick area
+                this.trickArea.className = 'center-trick-area';
+                for (let i = 0; i < 4; i++) {
+                    this.trickSlots[i].innerHTML = '';
+                    this.trickSlots[i].classList.remove('winning-card');
+                }
+                this.updateUI();
+            }
+        }
+        this.isProcessingAI = false;
+        this.updateUI();
     }
 
     updateUI() {
@@ -339,8 +424,24 @@ class RikkenGameApp {
             this.piekPill.style.display = 'none';
         }
 
-        // 2. Scores & Opponent Hands
+        // 2. Leader & Active Turn Indicators
+        const leader = this.state.trick_leader;
+        const current = this.state.current_player;
+
         for (let p = 0; p < 4; p++) {
+            // Update Leader Badge
+            if (this.leaderBadges[p]) {
+                this.leaderBadges[p].style.display = (p === leader && this.state.phase === 'TRICK_TAKING') ? 'inline-block' : 'none';
+            }
+            // Update Active Turn glow
+            const zone = this.playerZones[p];
+            if (zone) {
+                const avatar = zone.querySelector('.player-avatar');
+                if (avatar) {
+                    avatar.classList.toggle('active-turn', p === current && this.state.phase !== 'TERMINAL');
+                }
+            }
+            // Trick count display
             this.tricksWonDisplays[p].textContent = `${this.state.tricks_won[p]} tricks`;
             if (p > 0) {
                 const count = this.state.hands_count[p];
@@ -375,11 +476,6 @@ class RikkenGameApp {
         this.renderLogs();
         this.fetchXAI();
         if (this.coachEnabled) this.fetchAICoach();
-
-        if (this.state.trick_count > this.prevTrickCount) {
-            this.audio.playTrickWin();
-            this.prevTrickCount = this.state.trick_count;
-        }
     }
 
     renderHumanHand() {
@@ -410,13 +506,11 @@ class RikkenGameApp {
                 </div>
             `;
 
-            // Always attach click listener for instant feedback
             cardEl.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.playCard(c.id);
             });
 
-            // Drag support
             cardEl.addEventListener('dragstart', (e) => {
                 this.draggedCardId = c.id;
                 e.dataTransfer.setData('text/plain', c.id);

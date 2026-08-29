@@ -76,60 +76,79 @@ class GameSession:
         self.last_action_time = time.time()
         self.completed_tricks: List[Dict[str, Any]] = []
 
-        # If AI starts bidding, step forward
-        self.advance_ai_turns()
-
     def advance_ai_turns(self) -> None:
-        """Advance AI turns until human player must act or game terminates."""
+        """Advance all AI turns until human player must act or game terminates."""
         while self.state.phase != Phase.TERMINAL:
             curr = self.state.current_player
             if curr == self.human_seat:
-                # Waiting for human action
+                break
+            res = self.step_ai_single()
+            if not res.get("stepped", False):
                 break
 
-            # AI turn
-            agent = self.agents[curr]
-            if self.state.phase == Phase.BIDDING:
-                bid_action = agent.act(self.state)
-                contract_name = Contract(bid_action).name if bid_action >= 0 else "PAS"
-                self.log.append(f"Player {curr} ({self._seat_name(curr)}) bids: {contract_name}")
-                self.state, reward = self.game.step(self.state, bid_action)
+    def step_ai_single(self) -> Dict[str, Any]:
+        """Execute a single AI move and return event metadata for animation."""
+        if self.state.phase == Phase.TERMINAL or self.state.current_player == self.human_seat:
+            return {"stepped": False, "reason": "Not AI turn or terminal"}
 
-                # Check if declaration needed by AI
-                if self.state.phase == Phase.TRICK_TAKING and Contract.is_trump_contract(self.state.contract):
-                    if self.state.declarer == curr:
-                        trump = agent.declare_trump(self.state)
-                        vraagaas = -1
-                        if self.state.contract == Contract.RIK:
-                            vraagaas = agent.declare_vraagaas(self.state, trump)
-                        self.state = self.game.declare(self.state, trump_suit=trump, vraagaas_suit=vraagaas)
-                        t_name = SUIT_NAMES[trump]
-                        v_str = f" | Calling Ace of {SUIT_NAMES[vraagaas]}" if vraagaas >= 0 else ""
-                        self.log.append(f"Player {curr} declares Trump: {t_name}{v_str}")
+        curr = self.state.current_player
+        agent = self.agents[curr]
+        event = {"stepped": True, "player": curr, "phase": self.state.phase.name}
 
-            elif self.state.phase == Phase.TRICK_TAKING:
-                # Check if human needs to declare trump
-                if Contract.is_trump_contract(self.state.contract) and self.state.trump_suit < 0 and self.state.declarer == self.human_seat:
-                    break  # Waiting for human declaration
+        if self.state.phase == Phase.BIDDING:
+            bid_action = agent.act(self.state)
+            c_name = Contract(bid_action).name if bid_action >= 0 else "PAS"
+            self.log.append(f"Player {curr} ({self._seat_name(curr)}) bids: {c_name}")
+            self.state, reward = self.game.step(self.state, bid_action)
+            event["action"] = "bid"
+            event["bid_name"] = c_name
+            event["bid_id"] = bid_action
 
-                card = agent.act(self.state)
-                self.log.append(f"Player {curr} ({self._seat_name(curr)}) plays {card_to_str(card)}")
-                
-                prev_trick_count = self.state.trick_count
-                prev_leader = self.state.trick_leader
-                trick_cards = list(self.state.current_trick)
-                trick_cards[curr] = card
+            # Check if declaration needed by AI
+            if self.state.phase == Phase.TRICK_TAKING and Contract.is_trump_contract(self.state.contract):
+                if self.state.declarer == curr:
+                    trump = agent.declare_trump(self.state)
+                    vraagaas = -1
+                    if self.state.contract == Contract.RIK:
+                        vraagaas = agent.declare_vraagaas(self.state, trump)
+                    self.state = self.game.declare(self.state, trump_suit=trump, vraagaas_suit=vraagaas)
+                    t_name = SUIT_NAMES[trump]
+                    v_str = f" | Calling Ace of {SUIT_NAMES[vraagaas]}" if vraagaas >= 0 else ""
+                    self.log.append(f"Player {curr} declares Trump: {t_name}{v_str}")
+                    event["declared_trump"] = trump
+                    event["declared_vraagaas"] = vraagaas
 
-                self.state, reward = self.game.step(self.state, card)
+        elif self.state.phase == Phase.TRICK_TAKING:
+            # Check if human needs to declare trump
+            if Contract.is_trump_contract(self.state.contract) and self.state.trump_suit < 0 and self.state.declarer == self.human_seat:
+                return {"stepped": False, "reason": "Waiting for human declaration"}
 
-                # If trick just resolved, record it
-                if self.state.trick_count > prev_trick_count or self.state.phase == Phase.TERMINAL:
-                    self.completed_tricks.append({
-                        "trick_num": prev_trick_count + 1,
-                        "leader": prev_leader,
-                        "winner": self.state.trick_leader,
-                        "cards": trick_cards,
-                    })
+            card = agent.act(self.state)
+            self.log.append(f"Player {curr} ({self._seat_name(curr)}) plays {card_to_str(card)}")
+
+            prev_trick_count = self.state.trick_count
+            prev_leader = self.state.trick_leader
+            trick_cards = list(self.state.current_trick)
+            trick_cards[curr] = card
+
+            self.state, reward = self.game.step(self.state, card)
+
+            event["action"] = "play"
+            event["card"] = self._format_card(card)
+            event["trick_complete"] = False
+
+            if self.state.trick_count > prev_trick_count or self.state.phase == Phase.TERMINAL:
+                event["trick_complete"] = True
+                event["winner"] = self.state.trick_leader
+                event["trick_num"] = prev_trick_count + 1
+                self.completed_tricks.append({
+                    "trick_num": prev_trick_count + 1,
+                    "leader": prev_leader,
+                    "winner": self.state.trick_leader,
+                    "cards": trick_cards,
+                })
+
+        return event
 
     def human_bid(self, contract_val: int) -> Tuple[bool, str]:
         """Process human bid action."""
@@ -150,7 +169,6 @@ class GameSession:
                 # Hearts fixed
                 self.state = self.game.declare(self.state, trump_suit=HEARTS_SUIT, vraagaas_suit=-1)
 
-        self.advance_ai_turns()
         return True, "Bid placed"
 
     def human_declare(self, trump_suit: int, vraagaas_suit: int = -1) -> Tuple[bool, str]:
@@ -169,7 +187,6 @@ class GameSession:
         v_str = f" | Calling Ace of {SUIT_NAMES[vraagaas_suit]}" if vraagaas_suit >= 0 else ""
         self.log.append(f"You declare Trump: {t_name}{v_str}")
 
-        self.advance_ai_turns()
         return True, "Declaration confirmed"
 
     def human_play(self, card: int) -> Tuple[bool, str]:
@@ -198,14 +215,12 @@ class GameSession:
                 "cards": trick_cards,
             })
 
-        self.advance_ai_turns()
         return True, "Card played"
 
     def get_state_payload(self) -> Dict[str, Any]:
         """Serialize full state for web client."""
         human_hand = self.state.hands[self.human_seat]
         hand_card_ids = [int(c) for c in np.where(human_hand)[0]]
-        # Sort hand by suit and rank
         hand_card_ids.sort(key=lambda c: (suit_of(c), rank_of(c)))
 
         legal_b = legal_bids(self.state) if self.state.phase == Phase.BIDDING and self.state.current_player == self.human_seat else []
@@ -220,24 +235,24 @@ class GameSession:
 
         return {
             "phase": self.state.phase.name,
-            "current_player": self.state.current_player,
-            "human_seat": self.human_seat,
-            "is_human_turn": self.state.current_player == self.human_seat and self.state.phase != Phase.TERMINAL,
-            "needs_declaration": needs_declaration,
+            "current_player": int(self.state.current_player),
+            "human_seat": int(self.human_seat),
+            "is_human_turn": bool(self.state.current_player == self.human_seat and self.state.phase != Phase.TERMINAL),
+            "needs_declaration": bool(needs_declaration),
             "contract": {
                 "id": int(self.state.contract),
                 "name": self.state.contract.name if self.state.contract != Contract.NO_BID else "NO_BID",
-                "declarer": self.state.declarer,
-                "partner": self.state.partner,
-                "trump_suit": self.state.trump_suit,
-                "vraagaas_suit": self.state.vraagaas_suit,
-                "is_trump": Contract.is_trump_contract(self.state.contract),
+                "declarer": int(self.state.declarer),
+                "partner": int(self.state.partner),
+                "trump_suit": int(self.state.trump_suit),
+                "vraagaas_suit": int(self.state.vraagaas_suit),
+                "is_trump": bool(Contract.is_trump_contract(self.state.contract)),
             },
             "hands_count": [int(np.sum(self.state.hands[p])) for p in range(4)],
             "human_hand": [self._format_card(c) for c in hand_card_ids],
             "legal_bids": [
                 {
-                    "id": b,
+                    "id": int(b),
                     "name": Contract(b).name if b >= 0 else "PAS",
                     "target_tricks": Contract.target_tricks(Contract(b)) if b >= 0 else 0,
                 }
@@ -248,8 +263,8 @@ class GameSession:
                 self._format_card(c) if c >= 0 else None
                 for c in self.state.current_trick
             ],
-            "trick_leader": self.state.trick_leader,
-            "trick_count": self.state.trick_count,
+            "trick_leader": int(self.state.trick_leader),
+            "trick_count": int(self.state.trick_count),
             "tricks_won": self.state.tricks_won.tolist(),
             "reward": float(self.state.reward) if self.state.reward is not None else None,
             "rewards": self.state.rewards.tolist() if hasattr(self.state, 'rewards') else None,
@@ -286,7 +301,7 @@ class GameSession:
         bids_analysis = []
         for b in legal:
             bids_analysis.append({
-                "contract_id": b,
+                "contract_id": int(b),
                 "contract_name": Contract(b).name if b >= 0 else "PAS",
                 "ev_score": float(ev_scores[b]),
                 "recommended": b == int(np.argmax([ev_scores[x] for x in legal])),
@@ -306,7 +321,6 @@ class GameSession:
         if agent is None or agent.bn is None:
             return {"available": False, "message": "Belief Network not loaded."}
 
-        # Predict card probabilities from perspective of seat 0
         p = self.human_seat
         probs = agent.bn.predict(
             own_hand=self.state.hands[p],
@@ -337,13 +351,13 @@ class GameSession:
         r = rank_of(c)
         return {
             "id": int(c),
-            "suit": s,
-            "rank": r,
+            "suit": int(s),
+            "rank": int(r),
             "suit_symbol": SUIT_SYMBOLS[s],
             "suit_name": SUIT_NAMES[s],
             "rank_char": RANK_CHARS[r],
             "display": f"{RANK_CHARS[r]}{SUIT_SYMBOLS[s]}",
-            "is_red": s in (1, 2),  # Diamonds and Hearts
+            "is_red": s in (1, 2),
         }
 
     def _seat_name(self, seat: int) -> str:

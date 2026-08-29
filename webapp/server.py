@@ -169,6 +169,15 @@ class RikkenHTTPHandler(BaseHTTPRequestHandler):
             })
             return
 
+        elif path == "/api/game/step_ai":
+            event = CURRENT_SESSION.step_ai_single()
+            self.send_json_response({
+                "success": True,
+                "event": event,
+                "state": CURRENT_SESSION.get_state_payload(),
+            })
+            return
+
         self.send_response(404)
         self.end_headers()
         self.wfile.write(b"Not Found")
