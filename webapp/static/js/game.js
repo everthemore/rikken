@@ -763,13 +763,20 @@ class RikkenGameApp {
                     for (let r = 0; r < 13; r++) {
                         const cardId = s * 13 + r;
                         const prob = probs[cardId] || 0;
-                        const cell = document.createElement('div');
-                        cell.className = 'belief-cell';
-                        const alpha = Math.min(1.0, prob * 1.5);
-                        cell.style.backgroundColor = `rgba(59, 130, 246, ${alpha})`;
-                        cell.title = `${ranks[r]}${suits[s]}: ${(prob * 100).toFixed(0)}%`;
-                        cell.textContent = prob > 0.05 ? `${(prob * 100).toFixed(0)}` : '';
-                        this.beliefMatrix.appendChild(cell);
+                        const rankChar = ranks[r];
+                        const suitSym = suits[s];
+                        const isRed = s === 1 || s === 2;
+
+                        const cardEl = document.createElement('div');
+                        const isHigh = prob >= 0.5;
+                        const isZero = prob <= 0.01;
+                        cardEl.className = `mini-card-cell ${isRed ? 'red' : 'black'} ${isHigh ? 'high-prob' : ''} ${isZero ? 'zero-prob' : ''}`;
+                        cardEl.title = `${rankChar}${suitSym}: ${(prob * 100).toFixed(1)}% probability`;
+                        cardEl.innerHTML = `
+                            <div class="mini-card-top">${rankChar}${suitSym}</div>
+                            <div class="mini-card-prob">${prob > 0.01 ? (prob * 100).toFixed(0) + '%' : '0%'}</div>
+                        `;
+                        this.beliefMatrix.appendChild(cardEl);
                     }
                 }
             }
@@ -781,7 +788,7 @@ class RikkenGameApp {
                 for (let p = 0; p < 4; p++) {
                     html += `<div class="void-row-label">${names[p]}</div>`;
                     for (let s = 0; s < 4; s++) {
-                        const isVoid = voids[p][s] === 1;
+                        const isVoid = Boolean(voids[p][s]);
                         html += `<div class="void-cell ${isVoid ? 'is-void' : ''}">${isVoid ? 'VOID' : 'OK'}</div>`;
                     }
                 }

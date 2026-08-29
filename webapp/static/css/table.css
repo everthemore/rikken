@@ -602,17 +602,7 @@ body {
     border: 1px solid var(--border-glass);
 }
 
-.belief-cell {
-    aspect-ratio: 1;
-    border-radius: 3px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.6rem;
-    font-family: 'JetBrains Mono', monospace;
-    color: white;
-    font-weight: 600;
-}
+
 
 /* Void Matrix */
 .void-matrix-grid {
@@ -1094,4 +1084,93 @@ body {
     cursor: not-allowed;
     border-color: rgba(255, 255, 255, 0.05);
     background: rgba(15, 23, 42, 0.4);
+}
+
+
+/* Mini Playing Cards in Belief Matrix */
+.belief-matrix {
+    display: grid;
+    grid-template-columns: repeat(13, 1fr);
+    gap: 3px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-glass);
+    overflow-x: auto;
+}
+
+.mini-card-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    height: 38px;
+    background: #ffffff;
+    border-radius: 4px;
+    padding: 2px 1px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    cursor: default;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    position: relative;
+    user-select: none;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.mini-card-cell:hover {
+    transform: translateY(-2px) scale(1.12);
+    z-index: 10;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.mini-card-cell.red {
+    color: var(--red-suit);
+}
+
+.mini-card-cell.black {
+    color: var(--black-suit);
+}
+
+.mini-card-top {
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    gap: 1px;
+}
+
+.mini-card-prob {
+    font-size: 0.55rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1;
+    color: #475569;
+}
+
+.mini-card-cell.high-prob {
+    border: 1.5px solid #2563eb;
+    box-shadow: 0 0 8px rgba(37, 99, 235, 0.6);
+    background: #f0f9ff;
+}
+
+.mini-card-cell.high-prob .mini-card-prob {
+    color: #2563eb;
+    font-weight: 800;
+}
+
+.mini-card-cell.zero-prob {
+    opacity: 0.28;
+    background: #cbd5e1;
+}
+
+.mini-card-cell.zero-prob .mini-card-prob {
+    color: #94a3b8;
+}
+
+/* Void Cell Highlighting */
+.void-cell.is-void {
+    background: rgba(239, 68, 68, 0.25) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    font-weight: 800;
 }
