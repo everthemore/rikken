@@ -1,5 +1,5 @@
 /**
- * webapp/static/js/game.js — Interactive Client Controller for Rikken AI WebApp
+ * webapp/static/js/game.js — Interactive Client Controller with Drag & Click Card Play
  */
 
 class RikkenAudio {
@@ -15,35 +15,39 @@ class RikkenAudio {
     }
 
     playCardSnap() {
-        this.init();
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(450, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.08);
+        try {
+            this.init();
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(450, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.08);
+        } catch (e) {}
     }
 
     playTrickWin() {
-        this.init();
-        const now = this.ctx.currentTime;
-        [523.25, 659.25, 783.99].forEach((freq, i) => {
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, now + i * 0.06);
-            gain.gain.setValueAtTime(0.2, now + i * 0.06);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.06 + 0.2);
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start(now + i * 0.06);
-            osc.stop(now + i * 0.06 + 0.2);
-        });
+        try {
+            this.init();
+            const now = this.ctx.currentTime;
+            [523.25, 659.25, 783.99].forEach((freq, i) => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + i * 0.06);
+                gain.gain.setValueAtTime(0.2, now + i * 0.06);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.06 + 0.2);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now + i * 0.06);
+                osc.stop(now + i * 0.06 + 0.2);
+            });
+        } catch (e) {}
     }
 }
 
@@ -56,6 +60,7 @@ class RikkenGameApp {
         this.selectedTrump = -1;
         this.selectedVraagaas = -1;
         this.prevTrickCount = 0;
+        this.draggedCardId = null;
 
         this.initDOMElements();
         this.bindEvents();
@@ -63,7 +68,6 @@ class RikkenGameApp {
     }
 
     initDOMElements() {
-        // Headers & Badges
         this.statusBadge = document.getElementById('game-status-badge');
         this.contractName = document.getElementById('pill-contract-name');
         this.trumpBadge = document.getElementById('pill-trump-badge');
@@ -74,7 +78,9 @@ class RikkenGameApp {
         this.btnCoachToggle = document.getElementById('btn-coach-toggle');
         this.btnNewGame = document.getElementById('btn-new-game');
 
-        // Table Elements
+        this.tableWrapper = document.querySelector('.table-wrapper');
+        this.cardTable = document.getElementById('card-table');
+        this.trickArea = document.getElementById('trick-area');
         this.humanHandContainer = document.getElementById('human-hand');
         this.trickSlots = {
             0: document.getElementById('trick-slot-0'),
@@ -87,7 +93,6 @@ class RikkenGameApp {
         this.piekPill = document.getElementById('piek-target-pill');
         this.piekVal = document.getElementById('piek-val-display');
 
-        // Opponents Hand Previews
         this.handPreviews = {
             1: document.getElementById('hand-preview-1'),
             2: document.getElementById('hand-preview-2'),
@@ -108,9 +113,6 @@ class RikkenGameApp {
         // Modals
         this.biddingModal = document.getElementById('bidding-modal');
         this.biddingContainer = document.getElementById('bidding-buttons-container');
-        this.modalCoachHint = document.getElementById('modal-coach-hint');
-        this.modalCoachHintText = document.getElementById('modal-coach-hint-text');
-
         this.declModal = document.getElementById('declaration-modal');
         this.declSubtitle = document.getElementById('decl-contract-subtitle');
         this.vraagaasSection = document.getElementById('vraagaas-section');
@@ -127,6 +129,20 @@ class RikkenGameApp {
         this.coachEvList = document.getElementById('coach-ev-list');
         this.logStream = document.getElementById('log-stream');
         this.oppSubBtns = document.querySelectorAll('.btn-sub');
+
+        // Toast container
+        this.toast = document.createElement('div');
+        this.toast.className = 'game-toast';
+        document.body.appendChild(this.toast);
+    }
+
+    showToast(msg, isError = false) {
+        this.toast.textContent = msg;
+        this.toast.className = `game-toast show ${isError ? 'error' : ''}`;
+        clearTimeout(this.toastTimer);
+        this.toastTimer = setTimeout(() => {
+            this.toast.className = 'game-toast';
+        }, 2200);
     }
 
     bindEvents() {
@@ -142,7 +158,7 @@ class RikkenGameApp {
             if (this.coachEnabled) this.fetchAICoach();
         });
 
-        // Tab Switching
+        // Tabs
         this.tabBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 this.tabBtns.forEach(b => b.classList.remove('active'));
@@ -154,7 +170,7 @@ class RikkenGameApp {
             });
         });
 
-        // Opponent Belief Selection
+        // Opponent Sub-tabs
         this.oppSubBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 this.oppSubBtns.forEach(b => b.classList.remove('active'));
@@ -164,7 +180,7 @@ class RikkenGameApp {
             });
         });
 
-        // Trump Declaration Suit Selection
+        // Trump Picker
         document.querySelectorAll('#trump-suit-picker .btn-suit').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('#trump-suit-picker .btn-suit').forEach(b => b.classList.remove('selected'));
@@ -174,7 +190,7 @@ class RikkenGameApp {
             });
         });
 
-        // Vraagaas Suit Selection
+        // Vraagaas Picker
         document.querySelectorAll('#vraagaas-suit-picker .btn-suit').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('#vraagaas-suit-picker .btn-suit').forEach(b => b.classList.remove('selected'));
@@ -185,6 +201,21 @@ class RikkenGameApp {
         });
 
         this.btnConfirmDecl.addEventListener('click', () => this.submitDeclaration());
+
+        // Drag and drop onto trick pile / table
+        [this.trickArea, this.cardTable].forEach(target => {
+            target.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            });
+            target.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (this.draggedCardId !== null) {
+                    this.playCard(this.draggedCardId);
+                    this.draggedCardId = null;
+                }
+            });
+        });
     }
 
     async startNewGame() {
@@ -199,6 +230,7 @@ class RikkenGameApp {
             this.state = data.state;
             this.prevTrickCount = 0;
             this.updateUI();
+            this.showToast("New hand dealt. Your turn to bid!");
         }
     }
 
@@ -239,8 +271,19 @@ class RikkenGameApp {
     }
 
     async playCard(cardId) {
-        if (!this.state || !this.state.is_human_turn || this.state.phase !== 'TRICK_TAKING') return;
-        if (!this.state.legal_plays.includes(cardId)) return;
+        if (!this.state) return;
+        if (this.state.phase !== 'TRICK_TAKING') {
+            this.showToast("Bidding is still in progress.", true);
+            return;
+        }
+        if (!this.state.is_human_turn) {
+            this.showToast("Waiting for opponents to play...", true);
+            return;
+        }
+        if (!this.state.legal_plays.includes(cardId)) {
+            this.showToast("Illegal card! You must follow suit if possible.", true);
+            return;
+        }
 
         this.audio.playCardSnap();
         const res = await fetch('/api/game/play', {
@@ -249,15 +292,23 @@ class RikkenGameApp {
             body: JSON.stringify({ card_id: cardId })
         });
         const data = await res.json();
-        this.state = data.state;
-        this.updateUI();
+        if (data.success) {
+            this.state = data.state;
+            this.updateUI();
+        } else {
+            this.showToast(data.message || "Failed to play card", true);
+        }
     }
 
     updateUI() {
         if (!this.state) return;
 
         // 1. Status & Badges
-        this.statusBadge.textContent = `Phase: ${this.state.phase}`;
+        const isMyTurn = this.state.is_human_turn;
+        this.statusBadge.textContent = isMyTurn ? `YOUR TURN (${this.state.phase})` : `Phase: ${this.state.phase}`;
+        this.statusBadge.style.borderColor = isMyTurn ? 'var(--gold)' : 'var(--border-accent)';
+        this.statusBadge.style.color = isMyTurn ? 'var(--gold)' : 'var(--blue)';
+
         const c = this.state.contract;
         this.contractName.textContent = c.name !== 'NO_BID' ? c.name : 'No Bid';
 
@@ -333,8 +384,8 @@ class RikkenGameApp {
 
     renderHumanHand() {
         this.humanHandContainer.innerHTML = '';
-        const cards = this.state.human_hand;
-        const legalPlays = this.state.legal_plays;
+        const cards = this.state.human_hand || [];
+        const legalPlays = this.state.legal_plays || [];
         const isTurn = this.state.is_human_turn && this.state.phase === 'TRICK_TAKING';
 
         cards.forEach((c, idx) => {
@@ -345,6 +396,8 @@ class RikkenGameApp {
 
             cardEl.className = `card ${colorClass} ${legalClass}`;
             cardEl.style.zIndex = idx + 1;
+            cardEl.draggable = isTurn && isLegal;
+
             cardEl.innerHTML = `
                 <div class="card-corner top">
                     <span class="card-rank">${c.rank_char}</span>
@@ -357,9 +410,23 @@ class RikkenGameApp {
                 </div>
             `;
 
-            if (isTurn && isLegal) {
-                cardEl.addEventListener('click', () => this.playCard(c.id));
-            }
+            // Always attach click listener for instant feedback
+            cardEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.playCard(c.id);
+            });
+
+            // Drag support
+            cardEl.addEventListener('dragstart', (e) => {
+                this.draggedCardId = c.id;
+                e.dataTransfer.setData('text/plain', c.id);
+                cardEl.classList.add('dragging');
+            });
+
+            cardEl.addEventListener('dragend', () => {
+                cardEl.classList.remove('dragging');
+            });
+
             this.humanHandContainer.appendChild(cardEl);
         });
     }
@@ -395,7 +462,7 @@ class RikkenGameApp {
     showBiddingModal() {
         this.biddingModal.style.display = 'flex';
         this.biddingContainer.innerHTML = '';
-        const legalBids = this.state.legal_bids.map(b => b.id);
+        const legalBids = (this.state.legal_bids || []).map(b => b.id);
 
         const allContracts = [
             { id: 0, name: 'PAS', target: 'Pass turn' },
@@ -471,7 +538,6 @@ class RikkenGameApp {
             const data = await res.json();
             if (!data.available) return;
 
-            // Render Belief Heatmap
             const oppData = data.opponents[this.selectedOpponent];
             if (oppData) {
                 this.beliefMatrix.innerHTML = '';
@@ -485,7 +551,6 @@ class RikkenGameApp {
                         const prob = probs[cardId] || 0;
                         const cell = document.createElement('div');
                         cell.className = 'belief-cell';
-                        const hue = 220;
                         const alpha = Math.min(1.0, prob * 1.5);
                         cell.style.backgroundColor = `rgba(59, 130, 246, ${alpha})`;
                         cell.title = `${ranks[r]}${suits[s]}: ${(prob * 100).toFixed(0)}%`;
@@ -495,7 +560,6 @@ class RikkenGameApp {
                 }
             }
 
-            // Render Void Matrix
             const voids = data.void_matrix;
             if (voids) {
                 let html = '<div class="void-header">Player</div><div class="void-header">♣</div><div class="void-header">♦</div><div class="void-header">♥</div><div class="void-header">♠</div>';
@@ -538,7 +602,6 @@ class RikkenGameApp {
     }
 }
 
-// Initialize on DOM load
 window.addEventListener('DOMContentLoaded', () => {
     window.app = new RikkenGameApp();
 });
