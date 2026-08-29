@@ -134,6 +134,20 @@ By analyzing 28.7M state transitions and ISMCTS search paths, five fundamental t
 
 ---
 
+
+### Tactic 6: "Terugkomen met Troef" (Partner Returning Trump after Vraagaas)
+- **Convention**: In *Rik* or *Rik Beter*, when the partner wins a trick with the called Vraagaas Ace and leads the subsequent trick, traditional human strategy dictates leading their **highest remaining Trump** to draw defenders' trumps and return control to the Declarer.
+- **Empirical Probe Findings (`analysis/analyze_partner_trump_lead.py`)**:
+  | Metric | Heuristic Baseline | Pure ISMCTS Neural Agent |
+  |:---|:---:|:---:|
+  | **Partner Returns Trump after Vraagaas** | `23.1%` (3/13) | `11.1%` (1/9) |
+  | **Partner Leads Off-Suit Card** | `76.9%` (10/13) | `88.9%` (8/9) |
+- **Strategic Insight & Analysis**:
+  - Without explicit human heuristic priors or partner communication channels, Monte Carlo tree search considers leading off-suits safer to protect remaining trumps and avoid bleeding tricks when partner's exact trump length is hidden.
+  - The human convention of *"Troef natrekken"* is a high-level cooperative signaling agreement built on human mutual trust that the Declarer holds long master trumps.
+
+---
+
 ## 3. Summary Table: Bidding Decision Matrix
 
 | Contract | Minimum Trumps | Minimum Aces | Minimum HCP | Max Losers (LTC) | Key Requirement |
