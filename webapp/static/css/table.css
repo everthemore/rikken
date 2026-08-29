@@ -946,3 +946,50 @@ body {
 @keyframes sweepWest  { to { transform: translate(-120%, -50%) scale(0.3); opacity: 0; } }
 @keyframes sweepNorth { to { transform: translate(-50%, -140%) scale(0.3); opacity: 0; } }
 @keyframes sweepEast  { to { transform: translate(40%, -50%) scale(0.3); opacity: 0; } }
+
+
+/* Non-blocking Bidding & Declaration Modals */
+.modal-backdrop#bidding-modal,
+.modal-backdrop#declaration-modal {
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(2px);
+    align-items: flex-start;
+    padding-top: 50px;
+}
+
+.modal-backdrop#bidding-modal .modal-card,
+.modal-backdrop#declaration-modal .modal-card {
+    max-width: 600px;
+    padding: 18px 24px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid var(--border-accent);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+}
+
+.modal-backdrop#bidding-modal .bidding-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    max-height: 260px;
+}
+
+.modal-backdrop#bidding-modal .btn-bid {
+    padding: 6px 10px;
+}
+
+.modal-backdrop#bidding-modal .btn-bid.pass-btn {
+    grid-column: span 3;
+    padding: 8px;
+}
+
+/* Ensure Human Hand is always elevated and crystal clear */
+.player-south {
+    z-index: 250 !important;
+}
+
+.human-hand-container {
+    z-index: 250 !important;
+}
+
+.human-hand-container .card {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+}
