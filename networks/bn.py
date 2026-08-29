@@ -194,6 +194,17 @@ class BeliefNetwork(nn.Module):
             excluding own seat).
         """
         self.eval()
+        if bid_history.ndim == 1 and len(bid_history) == 4:
+            bids_oh = np.zeros((4, 14), dtype=np.float32)
+            for p_idx, b in enumerate(bid_history):
+                if 0 <= b < 14:
+                    bids_oh[p_idx, b] = 1.0
+            bid_history = bids_oh
+        elif bid_history.size == 52:
+            # Pad 52 to 56 for 14 contracts
+            pad = np.zeros(4, dtype=np.float32)
+            bid_history = np.concatenate([bid_history.flatten(), pad])
+
         with torch.no_grad():
             # Compute hard mask: cards that cannot be in any opponent's hand
             impossible = own_hand.astype(bool) | played_cards.astype(bool)

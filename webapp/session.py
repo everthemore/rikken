@@ -370,10 +370,16 @@ class GameSession:
             if c >= 0:
                 trick_one_hot[c] = 1
 
+        bids_one_hot = np.zeros((4, 14), dtype=np.float32)
+        for p_idx in range(4):
+            b = self.state.bids[p_idx]
+            if 0 <= b < 14:
+                bids_one_hot[p_idx, b] = 1.0
+
         probs = agent.bn.predict(
             own_hand=self.state.hands[p],
             played_cards=self.state.played_cards,
-            bid_history=self.state.bids,
+            bid_history=bids_one_hot,
             current_trick=trick_one_hot,
             void_matrix=self.state.void_matrix,
             my_seat=p,
