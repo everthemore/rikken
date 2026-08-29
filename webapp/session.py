@@ -47,7 +47,7 @@ class GameSession:
         self.rollouts = rollouts
         self.determinizations = determinizations
         self.rng = np.random.default_rng(seed)
-        self.game = RikkenGame(rng=self.rng)
+        self.game = RikkenGame(rng=self.rng, use_early_stop=False)
 
         # Initialize Agents
         self.agents: List[Any] = []

@@ -246,8 +246,16 @@ class RikkenState:
         if self.declarer < 0:
             return 0
         total = int(self.tricks_won[self.declarer])
-        if self.partner >= 0 and self.partner != self.declarer:
-            total += int(self.tricks_won[self.partner])
+        partner = self.partner
+        if partner < 0 and Contract.is_partner_contract(self.contract) and self.vraagaas_suit >= 0:
+            from engine.card import card_id, ACE_RANK
+            ace = card_id(self.vraagaas_suit, ACE_RANK)
+            for p in range(4):
+                if p != self.declarer and self.hands[p, ace]:
+                    partner = p
+                    break
+        if partner >= 0 and partner != self.declarer:
+            total += int(self.tricks_won[partner])
         return total
 
     @property
