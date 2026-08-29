@@ -1,7 +1,4 @@
-"""
-webapp/server.py — Zero-dependency HTTP & REST JSON API Server for Interactive Rikken.
-"""
-
+# webapp/server.py
 from __future__ import annotations
 import os
 import json
@@ -10,12 +7,27 @@ import mimetypes
 from urllib.parse import urlparse, parse_qs
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Optional
+import numpy as np
 
 from webapp.session import GameSession
 
 log = logging.getLogger(__name__)
 
-# Global single-user / multi-session container
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (np.integer, np.int8, np.int16, np.int32, np.int64)):
+            return int(obj)
+        elif isinstance(obj, (np.floating, np.float32, np.float64)):
+            return float(obj)
+        elif isinstance(obj, (np.bool_, bool)):
+            return bool(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super().default(obj)
+
+class ReusableHTTPServer(HTTPServer):
+    allow_reuse_address = True
+
 CURRENT_SESSION: Optional[GameSession] = None
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 DOCS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs")
@@ -25,11 +37,10 @@ class RikkenHTTPHandler(BaseHTTPRequestHandler):
     """HTTP request handler for Rikken WebApp."""
 
     def log_message(self, format, *args):
-        # Concise logging
         log.info(f"{self.command} {self.path} -> {args[1]}")
 
     def send_json_response(self, data: dict, status: int = 200):
-        body = json.dumps(data).encode("utf-8")
+        body = json.dumps(data, cls=NumpyEncoder).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -99,7 +110,6 @@ class RikkenHTTPHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
 
-        # Read JSON body
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else "{}"
         try:
@@ -186,7 +196,7 @@ class RikkenHTTPHandler(BaseHTTPRequestHandler):
 def run_server(host: str = "0.0.0.0", port: int = 8080):
     """Run the interactive Rikken game server."""
     server_address = (host, port)
-    httpd = HTTPServer(server_address, RikkenHTTPHandler)
+    httpd = ReusableHTTPServer(server_address, RikkenHTTPHandler)
     print("=" * 65)
     print(f"  ♠ ♥ ♦ ♣  RIKKEN AI INTERACTIVE WEB SERVER RUNNING")
     print(f"  Local Address:  http://localhost:{port}")
