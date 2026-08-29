@@ -207,6 +207,11 @@ class RikkenGameApp {
                 document.querySelectorAll('#trump-suit-picker .btn-suit').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
                 this.selectedTrump = parseInt(btn.dataset.suit);
+                if (this.selectedVraagaas === this.selectedTrump) {
+                    this.selectedVraagaas = -1;
+                    document.querySelectorAll('#vraagaas-suit-picker .btn-suit').forEach(b => b.classList.remove('selected'));
+                }
+                this.updateVraagaasButtons();
                 this.validateDeclaration();
             });
         });
@@ -271,9 +276,33 @@ class RikkenGameApp {
         this.checkAndStepAI();
     }
 
+    updateVraagaasButtons() {
+        const heldAces = this.state.held_aces || [];
+        document.querySelectorAll('#vraagaas-suit-picker .btn-suit').forEach(btn => {
+            const suit = parseInt(btn.dataset.suit);
+            const isTrump = suit === this.selectedTrump;
+            const isHeld = heldAces.includes(suit);
+
+            btn.disabled = isTrump || isHeld;
+            btn.classList.toggle('disabled-suit', isTrump || isHeld);
+
+            if (isTrump) {
+                btn.title = "Cannot call Ace of the Trump suit";
+            } else if (isHeld) {
+                btn.title = "Cannot call an Ace you hold in your hand!";
+            } else {
+                btn.title = "Legal partner Ace";
+            }
+        });
+    }
+
     validateDeclaration() {
         if (this.state && this.state.contract.name === 'RIK') {
-            this.btnConfirmDecl.disabled = !(this.selectedTrump >= 0 && this.selectedVraagaas >= 0 && this.selectedTrump !== this.selectedVraagaas);
+            const heldAces = this.state.held_aces || [];
+            const isValidVraagaas = this.selectedVraagaas >= 0 && 
+                                    this.selectedVraagaas !== this.selectedTrump && 
+                                    !heldAces.includes(this.selectedVraagaas);
+            this.btnConfirmDecl.disabled = !(this.selectedTrump >= 0 && isValidVraagaas);
         } else {
             this.btnConfirmDecl.disabled = !(this.selectedTrump >= 0);
         }
@@ -685,6 +714,9 @@ class RikkenGameApp {
         this.vraagaasSection.style.display = (this.state.contract.name === 'RIK') ? 'block' : 'none';
         this.selectedTrump = -1;
         this.selectedVraagaas = -1;
+        document.querySelectorAll('#trump-suit-picker .btn-suit').forEach(b => b.classList.remove('selected'));
+        document.querySelectorAll('#vraagaas-suit-picker .btn-suit').forEach(b => b.classList.remove('selected'));
+        this.updateVraagaasButtons();
         this.validateDeclaration();
     }
 

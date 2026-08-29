@@ -231,6 +231,7 @@ class GameSession:
         human_hand = self.state.hands[self.human_seat]
         hand_card_ids = [int(c) for c in np.where(human_hand)[0]]
         hand_card_ids.sort(key=lambda c: (suit_of(c), rank_of(c)))
+        held_aces = [s for s in range(4) if human_hand[card_id(s, ACE_RANK)]]
 
         legal_b = legal_bids(self.state) if self.state.phase == Phase.BIDDING and self.state.current_player == self.human_seat else []
         legal_p = [int(c) for c in np.where(legal_plays(self.state))[0]] if self.state.phase == Phase.TRICK_TAKING and self.state.current_player == self.human_seat else []
@@ -285,6 +286,7 @@ class GameSession:
             },
             "hands_count": [int(np.sum(self.state.hands[p])) for p in range(4)],
             "human_hand": [self._format_card(c) for c in hand_card_ids],
+            "held_aces": held_aces,
             "legal_bids": [
                 {
                     "id": int(b),

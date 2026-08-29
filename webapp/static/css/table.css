@@ -1086,3 +1086,12 @@ body {
 .bid-strip-item.you-strip .strip-bid {
     color: var(--gold);
 }
+
+
+.btn-suit:disabled,
+.btn-suit.disabled-suit {
+    opacity: 0.35;
+    cursor: not-allowed;
+    border-color: rgba(255, 255, 255, 0.05);
+    background: rgba(15, 23, 42, 0.4);
+}
