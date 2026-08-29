@@ -112,7 +112,7 @@ class GameSession:
                 if self.state.declarer == curr:
                     trump = agent.declare_trump(self.state)
                     vraagaas = -1
-                    if self.state.contract == Contract.RIK:
+                    if self.state.contract in (Contract.RIK, Contract.RIK_BETER):
                         vraagaas = agent.declare_vraagaas(self.state, trump)
                     self.state = self.game.declare(self.state, trump_suit=trump, vraagaas_suit=vraagaas)
                     t_name = SUIT_NAMES[trump]
@@ -170,11 +170,7 @@ class GameSession:
         self.log.append(f"You (Player {self.human_seat}) bid: {c_name}")
         self.state, reward = self.game.step(self.state, contract_val)
 
-        # Check if human is declarer and needs to declare trump
-        if self.state.phase == Phase.TRICK_TAKING and Contract.is_trump_contract(self.state.contract):
-            if self.state.declarer == self.human_seat and self.state.contract == Contract.RIK_BETER:
-                # Hearts fixed
-                self.state = self.game.declare(self.state, trump_suit=HEARTS_SUIT, vraagaas_suit=-1)
+
 
         return True, "Bid placed"
 
@@ -238,9 +234,11 @@ class GameSession:
 
         needs_declaration = (
             self.state.phase == Phase.TRICK_TAKING
-            and Contract.is_trump_contract(self.state.contract)
-            and self.state.trump_suit < 0
             and self.state.declarer == self.human_seat
+            and (
+                (self.state.contract == Contract.RIK_BETER and self.state.vraagaas_suit < 0)
+                or (Contract.is_trump_contract(self.state.contract) and self.state.trump_suit < 0)
+            )
         )
 
         player_bids = []

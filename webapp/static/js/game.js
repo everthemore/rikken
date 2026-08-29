@@ -297,7 +297,7 @@ class RikkenGameApp {
     }
 
     validateDeclaration() {
-        if (this.state && this.state.contract.name === 'RIK') {
+        if (this.state && (this.state.contract.name === 'RIK' || this.state.contract.name === 'RIK_BETER')) {
             const heldAces = this.state.held_aces || [];
             const isValidVraagaas = this.selectedVraagaas >= 0 && 
                                     this.selectedVraagaas !== this.selectedTrump && 
@@ -710,12 +710,31 @@ class RikkenGameApp {
 
     showDeclarationModal() {
         this.declModal.style.display = 'flex';
-        this.declSubtitle.textContent = `Contract: ${this.state.contract.name}`;
-        this.vraagaasSection.style.display = (this.state.contract.name === 'RIK') ? 'block' : 'none';
-        this.selectedTrump = -1;
+        const isRikBeter = this.state.contract.name === 'RIK_BETER';
+        const isRik = this.state.contract.name === 'RIK';
+        const isPartnerContract = isRik || isRikBeter;
+
+        this.declSubtitle.textContent = isRikBeter 
+            ? 'Contract: RIK_BETER (♥ Hearts Trump Fixed — Call Partner Ace)' 
+            : `Contract: ${this.state.contract.name}`;
+
+        const trumpSection = document.querySelector('.decl-section:first-child');
+        if (trumpSection) {
+            trumpSection.style.display = isRikBeter ? 'none' : 'block';
+        }
+
+        this.vraagaasSection.style.display = isPartnerContract ? 'block' : 'none';
+
+        if (isRikBeter) {
+            this.selectedTrump = 2; // Hearts fixed
+        } else {
+            this.selectedTrump = -1;
+        }
         this.selectedVraagaas = -1;
+
         document.querySelectorAll('#trump-suit-picker .btn-suit').forEach(b => b.classList.remove('selected'));
         document.querySelectorAll('#vraagaas-suit-picker .btn-suit').forEach(b => b.classList.remove('selected'));
+
         this.updateVraagaasButtons();
         this.validateDeclaration();
     }
