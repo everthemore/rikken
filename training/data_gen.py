@@ -116,7 +116,7 @@ def run_one_game(seed: int) -> dict:
 
     for rec in bid_records:
         p = rec['player']
-        rec['outcome'] = float(game.get_reward(state, p) > 0)
+        rec['outcome'] = float(game.get_reward(state, p))
 
     return {
         'bid_records':  bid_records,

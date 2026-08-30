@@ -124,8 +124,9 @@ def train(
                 val_loss += loss.item() * len(hands)
 
                 taken_logit = logits.gather(1, bid_taken.unsqueeze(1)).squeeze(1)
-                preds = (torch.sigmoid(taken_logit) > 0.5).float()
-                correct += (preds == outcome).sum().item()
+                preds = torch.sign(taken_logit)
+                target_sign = torch.sign(outcome)
+                correct += (preds == target_sign).sum().item()
                 total += len(outcome)
 
         val_loss /= max(total, 1)

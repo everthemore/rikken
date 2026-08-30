@@ -1,8 +1,8 @@
 """
 networks/bvn.py — Bidding Value Network (BVN).
 
-Architecture: Transformer encoder -> MLP head.
-Updated to 14 contracts: PAS(0) through TROELA(13).
+Architecture: Transformer encoder -> MLP head with Tanh activation.
+Outputs continuous Expected Value Q(s, a) in [-1.0, +1.0] across all 14 contracts.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ INPUT_SIZE    = HAND_SIZE + BID_HIST_SIZE     # 108
 
 class BVN(nn.Module):
     """
-    Bidding Value Network.
+    Bidding Action-Value Q-Network (AlphaZero-style Expected Return Head).
     """
 
     def __init__(
@@ -56,6 +56,7 @@ class BVN(nn.Module):
             nn.LayerNorm(mlp_hidden),
             nn.Dropout(dropout),
             nn.Linear(mlp_hidden, NUM_CONTRACTS),
+            nn.Tanh(),  # Direct Expected Value Q(s, a) in [-1.0, +1.0]
         )
 
         self._init_weights()
@@ -77,8 +78,8 @@ class BVN(nn.Module):
         x = torch.cat([hands, bid_hist], dim=-1)
         h = self.input_proj(x).unsqueeze(1)
         h = self.transformer(h).squeeze(1)
-        logits = self.head(h)
-        return logits, None
+        q_values = self.head(h)
+        return q_values, None
 
     def predict_ev(
         self,
@@ -86,6 +87,9 @@ class BVN(nn.Module):
         bids: np.ndarray,
         device: str = config.DEVICE,
     ) -> np.ndarray:
+        """
+        Inference convenience method returning Q(s, a) in [-1.0, +1.0] for all 14 actions.
+        """
         self.eval()
         with torch.no_grad():
             hand_t = torch.tensor(hand, dtype=torch.float32, device=device).unsqueeze(0)
@@ -96,21 +100,21 @@ class BVN(nn.Module):
                     bid_hist_1hot[p, b] = 1.0
             bid_hist_t = torch.tensor(bid_hist_1hot.flatten(), dtype=torch.float32, device=device).unsqueeze(0)
 
-            logits, _ = self.forward(hand_t, bid_hist_t)
-            probs = torch.sigmoid(logits).squeeze(0).cpu().numpy()
-            return probs
+            q_vals, _ = self.forward(hand_t, bid_hist_t)
+            return q_vals.squeeze(0).cpu().numpy()
 
 
 class BVNLoss(nn.Module):
-    def __init__(self):
+    """Smooth L1 (Huber) regression on signed terminal game returns in [-1.0, +1.0]."""
+    def __init__(self, beta: float = 0.1):
         super().__init__()
-        self.bce = nn.BCEWithLogitsLoss()
+        self.loss_fn = nn.SmoothL1Loss(beta=beta)
 
     def forward(
         self,
-        logits: torch.Tensor,
+        q_values: torch.Tensor,
         bid_taken: torch.Tensor,
         outcome: torch.Tensor,
     ) -> torch.Tensor:
-        taken_logits = logits.gather(1, bid_taken.unsqueeze(1)).squeeze(1)
-        return self.bce(taken_logits, outcome.float())
+        taken_q = q_values.gather(1, bid_taken.unsqueeze(1)).squeeze(1)
+        return self.loss_fn(taken_q, outcome.float())

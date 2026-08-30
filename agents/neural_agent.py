@@ -104,7 +104,7 @@ class NeuralAgent:
             raise RuntimeError("Act called on terminal state")
 
     def _act_bid(self, state: RikkenState) -> int:
-        """Evaluate legal bids with BVN and select argmax expected value."""
+        """Evaluate legal bids with Q-Value BVN and select argmax expected value (constant-free)."""
         legal = legal_bids(state)
         if not legal or legal == [int(Contract.PAS)]:
             return int(Contract.PAS)
@@ -116,20 +116,15 @@ class NeuralAgent:
         hand = state.hands[p]
         bids = state.bids
 
-        ev_scores = self.bvn.predict_ev(hand=hand, bids=bids, device=self.device)
+        q_scores = self.bvn.predict_ev(hand=hand, bids=bids, device=self.device)
 
         # Mask illegal bids with -inf
-        masked_scores = np.full(len(ev_scores), -np.inf)
+        masked_q = np.full(len(q_scores), -np.inf)
         for b in legal:
-            masked_scores[b] = ev_scores[b]
+            masked_q[b] = q_scores[b]
 
-        best_bid = int(np.argmax(masked_scores))
-
-        # Check PAS threshold
-        if best_bid != int(Contract.PAS) and masked_scores[best_bid] < 0.40:
-            if int(Contract.PAS) in legal:
-                return int(Contract.PAS)
-
+        # Pure parameter-free argmax Q(s, a):
+        best_bid = int(np.argmax(masked_q))
         return best_bid
 
     def declare_trump(self, state: RikkenState) -> int:

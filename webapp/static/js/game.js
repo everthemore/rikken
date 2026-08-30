@@ -831,7 +831,7 @@ class RikkenGameApp {
                 row.innerHTML = `
                     <span class="coach-contract-name">${item.contract_name} ${item.recommended ? '⭐' : ''}</span>
                     <div class="coach-ev-bar-wrap">
-                        <span class="coach-ev-val">${(item.ev_score * 100).toFixed(1)}% EV</span>
+                        <span class="coach-ev-val">${item.ev_score >= 0 ? '+' : ''}${item.ev_score.toFixed(2)} EV</span>
                     </div>
                 `;
                 this.coachEvList.appendChild(row);
