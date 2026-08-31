@@ -132,22 +132,25 @@ class HeuristicAgent:
         if self._is_piek_hand(hand):
             return int(Contract.PIEK)
 
-        # Strength ladder
-        if strength >= 22 and ace_count >= 3:
+        # Realistic human-strength bidding ladder:
+        suit_lengths = [int(np.sum(hand & SUIT_MASKS[s])) for s in range(NUM_SUITS)]
+        max_suit_len = max(suit_lengths)
+
+        if strength >= 26.0 and ace_count >= 4 and max_suit_len >= 7:
             return int(Contract.SOLO_SLIM)
-        elif strength >= 19 and ace_count >= 2:
+        elif strength >= 24.0 and ace_count >= 3 and max_suit_len >= 7:
             return int(Contract.TWAALF_ALLEEN)
-        elif strength >= 17 and ace_count >= 2:
+        elif strength >= 22.0 and ace_count >= 3 and max_suit_len >= 7:
             return int(Contract.ELF_ALLEEN)
-        elif strength >= 15 and ace_count >= 2:
+        elif strength >= 21.0 and ace_count >= 2 and max_suit_len >= 6:
             return int(Contract.TIEN_ALLEEN)
-        elif strength >= 13 and ace_count >= 1:
+        elif strength >= 19.0 and ace_count >= 2 and max_suit_len >= 6:
             return int(Contract.NEGEN_ALLEEN)
-        elif strength >= 11 and ace_count >= 1:
+        elif strength >= 17.0 and ace_count >= 1 and max_suit_len >= 6:
             return int(Contract.ACHT_ALLEEN)
-        elif strength >= 9 and ace_count >= 1 and hearts_count >= 5:
+        elif strength >= 10.0 and ace_count >= 1 and hearts_count >= 5:
             return int(Contract.RIK_BETER)
-        elif strength >= 9 and ace_count >= 1:
+        elif strength >= 9.0 and ace_count >= 1 and max_suit_len >= 4:
             return int(Contract.RIK)
         else:
             return int(Contract.PAS)

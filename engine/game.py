@@ -286,34 +286,81 @@ class RikkenGame:
         return +1.0 if won else -1.0
 
     def _compute_rewards_vector(self, s: RikkenState) -> None:
+        """
+        Compute zero-sum game payoffs per player based on official Dutch Rikken scoring schedule.
+        Normalized by dividing by 10.0 for neural network regression stability.
+        """
         c = s.contract
         s.rewards = np.zeros(4, dtype=np.float32)
 
+        # Base contract point schedule (Declarer payoff):
+        # Rik / Rik Beter / Troela: +1 pt (2v2) -> +0.10 each
+        # 8 Alleen: +3 pts (1v3) -> +0.30, defenders -0.10 each
+        # 9 Alleen: +4 pts (1v3) -> +0.40, defenders -0.133 each
+        # 10 Alleen: +5 pts (1v3) -> +0.50, defenders -0.167 each
+        # 11 Alleen: +6 pts (1v3) -> +0.60, defenders -0.200 each
+        # 12 Alleen: +7 pts (1v3) -> +0.70, defenders -0.233 each
+        # Solo Slim (13): +8 pts (1v3) -> +0.80, defenders -0.267 each
+        # Misere / Piek: +9 pts (1v3) -> +0.90, defenders -0.300 each
+        # Open Misere / Open Piek: +10 pts (1v3) -> +1.00, defenders -0.333 each
+
+        decl_pts_map = {
+            Contract.RIK: 1.0,
+            Contract.RIK_BETER: 1.0,
+            Contract.TROELA: 1.0,
+            Contract.ACHT_ALLEEN: 3.0,
+            Contract.NEGEN_ALLEEN: 4.0,
+            Contract.TIEN_ALLEEN: 5.0,
+            Contract.ELF_ALLEEN: 6.0,
+            Contract.TWAALF_ALLEEN: 7.0,
+            Contract.SOLO_SLIM: 8.0,
+            Contract.MISERE: 9.0,
+            Contract.PIEK: 9.0,
+            Contract.OPEN_MISERE: 10.0,
+            Contract.OPEN_PIEK: 10.0,
+        }
+
+        decl_base_pt = decl_pts_map.get(c, 1.0) / 10.0
+
         if Contract.is_multi_player_allowed(c):
-            for p in range(4):
-                if s.declarer_mask[p]:
-                    tw = s.tricks_won[p]
-                    if c in (Contract.MISERE, Contract.OPEN_MISERE):
-                        s.rewards[p] = +1.0 if tw == 0 else -1.0
-                    elif c in (Contract.PIEK, Contract.OPEN_PIEK):
-                        s.rewards[p] = +1.0 if (tw == 1 or tw == 5) else -1.0
+            # Multi-player contract (e.g. Misere / Piek):
+            decls = np.where(s.declarer_mask)[0]
+            defs = [p for p in range(4) if not s.declarer_mask[p]]
+            n_defs = len(defs)
+
+            for d in decls:
+                tw = s.tricks_won[d]
+                if c in (Contract.MISERE, Contract.OPEN_MISERE):
+                    won = (tw == 0)
+                else:  # PIEK / OPEN_PIEK
+                    won = (tw == 1 or tw == 5)
+
+                if won:
+                    s.rewards[d] += decl_base_pt
+                    if n_defs > 0:
+                        for df in defs:
+                            s.rewards[df] -= (decl_base_pt / n_defs)
                 else:
-                    # Defender gets positive payoff if at least one declarer failed
-                    active_decls = np.where(s.declarer_mask)[0]
-                    decl_wins = sum(
-                        1 for d in active_decls
-                        if (c in (Contract.MISERE, Contract.OPEN_MISERE) and s.tricks_won[d] == 0)
-                        or (c in (Contract.PIEK, Contract.OPEN_PIEK) and (s.tricks_won[d] == 1 or s.tricks_won[d] == 5))
-                    )
-                    s.rewards[p] = +1.0 if decl_wins < len(active_decls) else -1.0
+                    s.rewards[d] -= decl_base_pt
+                    if n_defs > 0:
+                        for df in defs:
+                            s.rewards[df] += (decl_base_pt / n_defs)
         else:
             decl_won = (s.reward is not None and s.reward > 0)
-            for p in range(4):
-                is_decl = (p == s.declarer or (Contract.is_partner_contract(c) and p == s.partner))
-                if is_decl:
-                    s.rewards[p] = +1.0 if decl_won else -1.0
-                else:
-                    s.rewards[p] = -1.0 if decl_won else +1.0
+            if Contract.is_partner_contract(c):
+                # 2 vs 2 partnership contract (Rik, Rik Beter, Troela)
+                sign = +1.0 if decl_won else -1.0
+                for p in range(4):
+                    is_decl_team = (p == s.declarer or p == s.partner)
+                    s.rewards[p] = (sign * decl_base_pt) if is_decl_team else (-sign * decl_base_pt)
+            else:
+                # 1 vs 3 solo contract (8 Alleen through Solo Slim)
+                sign = +1.0 if decl_won else -1.0
+                for p in range(4):
+                    if p == s.declarer:
+                        s.rewards[p] = sign * decl_base_pt
+                    else:
+                        s.rewards[p] = -sign * (decl_base_pt / 3.0)
 
     def is_terminal(self, state: RikkenState) -> bool:
         return state.is_terminal

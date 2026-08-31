@@ -122,16 +122,23 @@ def run_bidding_xai_extraction(bvn_path: str = "checkpoints/bvn_best.pt", n_samp
     print(f"Evaluating {n_samples:,} simulated board situations...")
     for i in range(n_samples // 4):
         state = game.reset()
+        from engine.rules import legal_bids
         for p in range(4):
             hand = state.hands[p]
             feats = extract_features(hand)
             q_vals = bvn.predict_ev(hand=hand, bids=state.bids, device="cpu")
-            best_action = int(np.argmax(q_vals))
+            
+            # Strictly apply legal actions mask
+            legal = legal_bids(state)
+            masked_q = np.full(len(q_vals), -np.inf)
+            for b in legal:
+                masked_q[b] = q_vals[b]
+            best_action = int(np.argmax(masked_q))
 
             X_features.append(feats)
             y_actions.append(best_action)
             q_pass_values.append(q_vals[0])
-            q_best_bid_values.append(np.max(q_vals[1:]))
+            q_best_bid_values.append(np.max([q_vals[b] for b in legal if b > 0]) if len(legal) > 1 else q_vals[0])
             contract_bids[best_action].append(feats)
 
     X = np.array(X_features)
