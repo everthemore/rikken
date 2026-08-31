@@ -56,3 +56,28 @@ On each trick:
 2. **Must Follow Suit**: Players must play a card of the led suit if they hold one.
 3. **Must Trump (Bekennen/Kopen)**: If void in the led suit, a player **must play a trump card** if they hold one.
 4. **Free Discard**: Only if void in both the led suit and the trump suit may a player discard any off-suit card.
+
+---
+
+## 5. Official Dutch Rikken Scoring Schedule & Payoffs
+
+Rikken is played as a **zero-sum point exchange game** ($\sum_{p=0}^3 	ext{Points}[p] = 0$). In the engine and neural training pipeline, points are normalized by $\div 10.0$ for numerical stability:
+
+| Contract | Team Structure | Target Tricks | Declarer Points | Defender Points (each) | Normalized Reward ($\div 10$) | Strategic Risk / Reward |
+|:---|:---:|:---:|:---:|:---:|:---:|:---|
+| **RIK / RIK BETER** | 2 vs 2 | 8+ | **$\pm 1.0$** (each) | **$\mp 1.0$** (each) | **$\pm 0.10$** | Low risk baseline cooperative contract |
+| **TROELA** | 2 vs 2 | 8+ | **$\pm 1.0$** (each) | **$\mp 1.0$** (each) | **$\pm 0.10$** | Cooperative contract with 4th Ace |
+| **ACHT ALLEEN** | 1 vs 3 | 8+ | **$\pm 3.0$** | **$\mp 1.0$** | **$\pm 0.30$** (Decl) / **$\mp 0.10$** (Defs) | 3x stakes solo attack |
+| **NEGEN ALLEEN** | 1 vs 3 | 9+ | **$\pm 4.0$** | **$\mp 1.33$** | **$\pm 0.40$** / **$\mp 0.133$** | Higher solo contract |
+| **TIEN ALLEEN** | 1 vs 3 | 10+ | **$\pm 5.0$** | **$\mp 1.67$** | **$\pm 0.50$** / **$\mp 0.167$** | High solo contract |
+| **ELF ALLEEN** | 1 vs 3 | 11+ | **$\pm 6.0$** | **$\mp 2.00$** | **$\pm 0.60$** / **$\mp 0.200$** | Near-slam solo |
+| **TWAALF ALLEEN** | 1 vs 3 | 12+ | **$\pm 7.0$** | **$\mp 2.33$** | **$\pm 0.70$** / **$\mp 0.233$** | Near-slam solo |
+| **SOLO SLIM (13)** | 1 vs 3 | 13 | **$\pm 8.0$** | **$\mp 2.67$** | **$\pm 0.80$** / **$\mp 0.267$** | Grand Slam (all 13 tricks) |
+| **MISÈRE** | 1 vs 3 | 0 | **$\pm 9.0$** | **$\mp 3.00$** | **$\pm 0.90$** / **$\mp 0.300$** | High penalty 0-trick contract |
+| **PIEK** | 1 vs 3 | 1 or 5 | **$\pm 9.0$** | **$\mp 3.00$** | **$\pm 0.90$** / **$\mp 0.300$** | High penalty 1/5-trick contract |
+| **OPEN MISÈRE / PIEK** | 1 vs 3 | 0 / (1 or 5) | **$\pm 10.0$** | **$\mp 3.33$** | **$\pm 1.00$** / **$\mp 0.333$** | Open face-up contract |
+
+### 5.1 Multi-Player Scoring (Simultaneous Misère / Piek)
+When multiple players co-bid Misère or Piek, each declarer wins $+9$ (or loses $-9$) independently against the remaining defenders:
+- If 2 players bid Misère and both win: each declarer gets $+9$, and the 2 defenders each pay $-9$.
+- If 1 declarer wins and 1 loses: the winning declarer gets $+9$, the losing declarer pays $-9$, and defenders get $0$ net.

@@ -41,8 +41,9 @@ The Rikken AI combines Neural Networks for intuition with Information Set Monte 
 - **Constant-Free Policy Execution**:
   $$\pi(s) = rg\max_{a \in 	ext{Legal}(s)} Q_	heta(s, a)$$
   Zero manual thresholds or heuristic parameters. The agent dynamically compares the expected value of declaring against the expected value of defending after passing.
-- **Loss Function**: Smooth L1 (Huber) regression ($eta = 0.1$) on signed terminal match outcomes $R \in \{-1.0, +1.0\}$:
-  $$\mathcal{L}(	heta) = rac{1}{B} \sum_{i=1}^B 	ext{Huber}\left( Q_	heta(s_i, a_i) - R_i ight)$$
+- **Loss Function**: Smooth L1 (Huber) regression ($eta = 0.1$) on signed zero-sum match rewards $R \in [-1.0, +1.0]$ derived from the official point schedule:
+  $$\mathcal{L}(	heta) = rac{1}{B} \sum_{i=1}^B 	ext{Huber}\left( Q_	heta(s_i, a_i) - R_i 
+ight)$$
 
 ---
 
