@@ -161,3 +161,27 @@ By analyzing 28.7M state transitions and ISMCTS search paths, five fundamental t
 | **Solo Slim** | 7+ | 4 | 22+ | 0 | All suits stopped; zero losers |
 | **Misère** | 0 | **0** | 0 | — | No cards $> 8$; 3+ suits covered |
 | **Piek** | — | 1 or 0 | $< 6$ | — | Exactly 1 winner or 5 clean stoppers |
+
+
+---
+
+## 4. XAI Empirical Decision Tree Models (Trained on 15,000 Board Positions)
+
+Using shallow decision trees and random forest feature importance on the converged BVN Q-network, we extracted the explicit feature drivers governing each contract:
+
+### 4.1 Troela Decision Profile (Trigger Rate: 15.6% of deals)
+- **Top Strategic Drivers**: `Ace_Count` (48.3%), `HCP` (23.4%), `Stoppers_Count` (10.8%).
+- **Average Characteristics**: $	ext{HCP} = 16.7$, $	ext{Aces} = 2.26$, $	ext{Trump Length} = 5.3$.
+- **Decision Logic**: Bids Troela whenever $	ext{Aces} \ge 2 	ext{ AND } 	ext{HCP} \ge 11$.
+
+### 4.2 Rik & Rik Beter Decision Profile
+- **Top Strategic Drivers**: `Low_Card_Count` (16.4%), `HCP` (13.6%), `Trump_HCP` (10.4%).
+- **Average Characteristics**: $	ext{Trump Length} \ge 5.2 - 6.2$, $	ext{HCP} pprox 8.2$.
+
+### 4.3 Misère Decision Profile
+- **Top Strategic Drivers**: `Low_Card_Count` (25.5%), `HCP` (15.0%), `Second_Suit_Len` (10.7%).
+- **Average Characteristics**: $	ext{HCP} \le 1.5$, $	ext{Low Cards} \ge 11.5$, $	ext{Aces} = 0$.
+
+### 4.4 Dynamic Pass Equity Distribution
+- **Defensive Value $Q(s, 	ext{PAS})$**: Averages $\mathbf{+0.997}$ against overbidding opponents.
+- **Strategic Principle**: The agent actively evaluates the opportunity cost of defending. If declaring has an expected value $< +0.90$, passing is preferred to capture defensive points.

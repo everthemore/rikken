@@ -1,0 +1,779 @@
+[
+  {
+    "iteration": 1,
+    "type": "generation_1",
+    "neural_win_rate": 0.8125,
+    "declarer_win_rate": 0.6667,
+    "defender_win_rate": 0.8395,
+    "neural_avg_tricks_declared": 5.93,
+    "heuristic_avg_tricks_declared": 5.54,
+    "contract_breakdown": {
+      "RIK": {
+        "total_bids": 1,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 1,
+        "heuristic_win_rate": 0.0
+      },
+      "ACHT_ALLEEN": {
+        "total_bids": 11,
+        "neural_bids": 4,
+        "neural_win_rate": 0.25,
+        "heuristic_bids": 7,
+        "heuristic_win_rate": 0.0
+      },
+      "NEGEN_ALLEEN": {
+        "total_bids": 34,
+        "neural_bids": 3,
+        "neural_win_rate": 0.667,
+        "heuristic_bids": 31,
+        "heuristic_win_rate": 0.129
+      },
+      "MISERE": {
+        "total_bids": 1,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 1,
+        "heuristic_win_rate": 1.0
+      },
+      "TIEN_ALLEEN": {
+        "total_bids": 10,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 10,
+        "heuristic_win_rate": 0.0
+      },
+      "ELF_ALLEEN": {
+        "total_bids": 13,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 13,
+        "heuristic_win_rate": 0.0
+      },
+      "TWAALF_ALLEEN": {
+        "total_bids": 10,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 10,
+        "heuristic_win_rate": 0.1
+      },
+      "TROELA": {
+        "total_bids": 16,
+        "neural_bids": 8,
+        "neural_win_rate": 0.875,
+        "heuristic_bids": 8,
+        "heuristic_win_rate": 0.875
+      }
+    },
+    "total_games": 96,
+    "redeals": 4,
+    "timestamp": "2026-08-30 22:24:58"
+  },
+  {
+    "iteration": 2,
+    "type": "generation_2",
+    "neural_win_rate": 0.8191,
+    "declarer_win_rate": 0.8571,
+    "defender_win_rate": 0.8125,
+    "neural_avg_tricks_declared": 6.14,
+    "heuristic_avg_tricks_declared": 5.22,
+    "contract_breakdown": {
+      "RIK": {
+        "total_bids": 3,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 3,
+        "heuristic_win_rate": 0.333
+      },
+      "RIK_BETER": {
+        "total_bids": 3,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 3,
+        "heuristic_win_rate": 0.667
+      },
+      "ACHT_ALLEEN": {
+        "total_bids": 8,
+        "neural_bids": 1,
+        "neural_win_rate": 1.0,
+        "heuristic_bids": 7,
+        "heuristic_win_rate": 0.143
+      },
+      "NEGEN_ALLEEN": {
+        "total_bids": 27,
+        "neural_bids": 2,
+        "neural_win_rate": 0.0,
+        "heuristic_bids": 25,
+        "heuristic_win_rate": 0.08
+      },
+      "MISERE": {
+        "total_bids": 2,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 2,
+        "heuristic_win_rate": 1.0
+      },
+      "TIEN_ALLEEN": {
+        "total_bids": 7,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 7,
+        "heuristic_win_rate": 0.0
+      },
+      "ELF_ALLEEN": {
+        "total_bids": 10,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 10,
+        "heuristic_win_rate": 0.0
+      },
+      "TWAALF_ALLEEN": {
+        "total_bids": 16,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 16,
+        "heuristic_win_rate": 0.062
+      },
+      "TROELA": {
+        "total_bids": 18,
+        "neural_bids": 11,
+        "neural_win_rate": 1.0,
+        "heuristic_bids": 7,
+        "heuristic_win_rate": 0.857
+      }
+    },
+    "total_games": 94,
+    "redeals": 6,
+    "timestamp": "2026-08-30 23:06:08"
+  },
+  {
+    "iteration": 3,
+    "type": "generation_3",
+    "neural_win_rate": 0.7604,
+    "declarer_win_rate": 0.4,
+    "defender_win_rate": 0.8272,
+    "neural_avg_tricks_declared": 3.67,
+    "heuristic_avg_tricks_declared": 5.14,
+    "contract_breakdown": {
+      "RIK_BETER": {
+        "total_bids": 2,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 2,
+        "heuristic_win_rate": 1.0
+      },
+      "ACHT_ALLEEN": {
+        "total_bids": 10,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 10,
+        "heuristic_win_rate": 0.0
+      },
+      "NEGEN_ALLEEN": {
+        "total_bids": 32,
+        "neural_bids": 8,
+        "neural_win_rate": 0.125,
+        "heuristic_bids": 24,
+        "heuristic_win_rate": 0.042
+      },
+      "MISERE": {
+        "total_bids": 5,
+        "neural_bids": 1,
+        "neural_win_rate": 0.0,
+        "heuristic_bids": 4,
+        "heuristic_win_rate": 0.5
+      },
+      "TIEN_ALLEEN": {
+        "total_bids": 9,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 9,
+        "heuristic_win_rate": 0.0
+      },
+      "ELF_ALLEEN": {
+        "total_bids": 7,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 7,
+        "heuristic_win_rate": 0.0
+      },
+      "TWAALF_ALLEEN": {
+        "total_bids": 15,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 15,
+        "heuristic_win_rate": 0.133
+      },
+      "SOLO_SLIM": {
+        "total_bids": 1,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 1,
+        "heuristic_win_rate": 0.0
+      },
+      "TROELA": {
+        "total_bids": 15,
+        "neural_bids": 6,
+        "neural_win_rate": 0.833,
+        "heuristic_bids": 9,
+        "heuristic_win_rate": 0.778
+      }
+    },
+    "total_games": 96,
+    "redeals": 4,
+    "timestamp": "2026-08-30 23:47:06"
+  },
+  {
+    "iteration": 4,
+    "type": "generation_4",
+    "neural_win_rate": 0.7292,
+    "declarer_win_rate": 0.5909,
+    "defender_win_rate": 0.7703,
+    "neural_avg_tricks_declared": 5.18,
+    "heuristic_avg_tricks_declared": 5.3,
+    "contract_breakdown": {
+      "RIK": {
+        "total_bids": 3,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 3,
+        "heuristic_win_rate": 1.0
+      },
+      "ACHT_ALLEEN": {
+        "total_bids": 9,
+        "neural_bids": 2,
+        "neural_win_rate": 0.5,
+        "heuristic_bids": 7,
+        "heuristic_win_rate": 0.0
+      },
+      "NEGEN_ALLEEN": {
+        "total_bids": 29,
+        "neural_bids": 6,
+        "neural_win_rate": 0.0,
+        "heuristic_bids": 23,
+        "heuristic_win_rate": 0.217
+      },
+      "MISERE": {
+        "total_bids": 6,
+        "neural_bids": 2,
+        "neural_win_rate": 0.5,
+        "heuristic_bids": 4,
+        "heuristic_win_rate": 0.5
+      },
+      "TIEN_ALLEEN": {
+        "total_bids": 8,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 8,
+        "heuristic_win_rate": 0.125
+      },
+      "ELF_ALLEEN": {
+        "total_bids": 3,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 3,
+        "heuristic_win_rate": 0.0
+      },
+      "TWAALF_ALLEEN": {
+        "total_bids": 21,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 21,
+        "heuristic_win_rate": 0.048
+      },
+      "TROELA": {
+        "total_bids": 17,
+        "neural_bids": 12,
+        "neural_win_rate": 0.917,
+        "heuristic_bids": 5,
+        "heuristic_win_rate": 1.0
+      }
+    },
+    "total_games": 96,
+    "redeals": 4,
+    "timestamp": "2026-08-31 00:27:32"
+  },
+  {
+    "iteration": 5,
+    "type": "generation_5",
+    "neural_win_rate": 0.7604,
+    "declarer_win_rate": 0.4211,
+    "defender_win_rate": 0.8442,
+    "neural_avg_tricks_declared": 4.32,
+    "heuristic_avg_tricks_declared": 5.57,
+    "contract_breakdown": {
+      "RIK": {
+        "total_bids": 4,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 4,
+        "heuristic_win_rate": 0.75
+      },
+      "RIK_BETER": {
+        "total_bids": 2,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 2,
+        "heuristic_win_rate": 0.0
+      },
+      "ACHT_ALLEEN": {
+        "total_bids": 14,
+        "neural_bids": 3,
+        "neural_win_rate": 0.333,
+        "heuristic_bids": 11,
+        "heuristic_win_rate": 0.0
+      },
+      "NEGEN_ALLEEN": {
+        "total_bids": 30,
+        "neural_bids": 7,
+        "neural_win_rate": 0.0,
+        "heuristic_bids": 23,
+        "heuristic_win_rate": 0.174
+      },
+      "MISERE": {
+        "total_bids": 3,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 3,
+        "heuristic_win_rate": 0.333
+      },
+      "TIEN_ALLEEN": {
+        "total_bids": 4,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 4,
+        "heuristic_win_rate": 0.0
+      },
+      "ELF_ALLEEN": {
+        "total_bids": 9,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 9,
+        "heuristic_win_rate": 0.0
+      },
+      "TWAALF_ALLEEN": {
+        "total_bids": 17,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 17,
+        "heuristic_win_rate": 0.059
+      },
+      "TROELA": {
+        "total_bids": 13,
+        "neural_bids": 9,
+        "neural_win_rate": 0.778,
+        "heuristic_bids": 4,
+        "heuristic_win_rate": 0.75
+      }
+    },
+    "total_games": 96,
+    "redeals": 4,
+    "timestamp": "2026-08-31 01:09:29"
+  },
+  {
+    "iteration": 6,
+    "type": "generation_6",
+    "neural_win_rate": 0.8182,
+    "declarer_win_rate": 0.5625,
+    "defender_win_rate": 0.8675,
+    "neural_avg_tricks_declared": 5.06,
+    "heuristic_avg_tricks_declared": 5.33,
+    "contract_breakdown": {
+      "RIK": {
+        "total_bids": 2,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 2,
+        "heuristic_win_rate": 1.0
+      },
+      "RIK_BETER": {
+        "total_bids": 2,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 2,
+        "heuristic_win_rate": 0.0
+      },
+      "ACHT_ALLEEN": {
+        "total_bids": 8,
+        "neural_bids": 3,
+        "neural_win_rate": 0.333,
+        "heuristic_bids": 5,
+        "heuristic_win_rate": 0.0
+      },
+      "NEGEN_ALLEEN": {
+        "total_bids": 29,
+        "neural_bids": 3,
+        "neural_win_rate": 0.0,
+        "heuristic_bids": 26,
+        "heuristic_win_rate": 0.115
+      },
+      "MISERE": {
+        "total_bids": 7,
+        "neural_bids": 1,
+        "neural_win_rate": 0.0,
+        "heuristic_bids": 6,
+        "heuristic_win_rate": 0.167
+      },
+      "TIEN_ALLEEN": {
+        "total_bids": 11,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 11,
+        "heuristic_win_rate": 0.0
+      },
+      "ELF_ALLEEN": {
+        "total_bids": 9,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 9,
+        "heuristic_win_rate": 0.0
+      },
+      "TWAALF_ALLEEN": {
+        "total_bids": 16,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 16,
+        "heuristic_win_rate": 0.125
+      },
+      "SOLO_SLIM": {
+        "total_bids": 3,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 3,
+        "heuristic_win_rate": 0.0
+      },
+      "TROELA": {
+        "total_bids": 12,
+        "neural_bids": 9,
+        "neural_win_rate": 0.889,
+        "heuristic_bids": 3,
+        "heuristic_win_rate": 1.0
+      }
+    },
+    "total_games": 99,
+    "redeals": 1,
+    "timestamp": "2026-08-31 01:51:08"
+  },
+  {
+    "iteration": 7,
+    "type": "generation_7",
+    "neural_win_rate": 0.7526,
+    "declarer_win_rate": 0.4375,
+    "defender_win_rate": 0.8148,
+    "neural_avg_tricks_declared": 4.19,
+    "heuristic_avg_tricks_declared": 4.89,
+    "contract_breakdown": {
+      "RIK": {
+        "total_bids": 2,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 2,
+        "heuristic_win_rate": 0.0
+      },
+      "RIK_BETER": {
+        "total_bids": 1,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 1,
+        "heuristic_win_rate": 1.0
+      },
+      "ACHT_ALLEEN": {
+        "total_bids": 7,
+        "neural_bids": 2,
+        "neural_win_rate": 0.0,
+        "heuristic_bids": 5,
+        "heuristic_win_rate": 0.0
+      },
+      "NEGEN_ALLEEN": {
+        "total_bids": 30,
+        "neural_bids": 6,
+        "neural_win_rate": 0.167,
+        "heuristic_bids": 24,
+        "heuristic_win_rate": 0.292
+      },
+      "MISERE": {
+        "total_bids": 10,
+        "neural_bids": 2,
+        "neural_win_rate": 0.0,
+        "heuristic_bids": 8,
+        "heuristic_win_rate": 0.375
+      },
+      "TIEN_ALLEEN": {
+        "total_bids": 8,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 8,
+        "heuristic_win_rate": 0.0
+      },
+      "ELF_ALLEEN": {
+        "total_bids": 10,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 10,
+        "heuristic_win_rate": 0.0
+      },
+      "TWAALF_ALLEEN": {
+        "total_bids": 18,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 18,
+        "heuristic_win_rate": 0.0
+      },
+      "SOLO_SLIM": {
+        "total_bids": 1,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 1,
+        "heuristic_win_rate": 0.0
+      },
+      "TROELA": {
+        "total_bids": 10,
+        "neural_bids": 6,
+        "neural_win_rate": 1.0,
+        "heuristic_bids": 4,
+        "heuristic_win_rate": 1.0
+      }
+    },
+    "total_games": 97,
+    "redeals": 3,
+    "timestamp": "2026-08-31 02:31:13"
+  },
+  {
+    "iteration": 8,
+    "type": "generation_8",
+    "neural_win_rate": 0.7245,
+    "declarer_win_rate": 0.6154,
+    "defender_win_rate": 0.7412,
+    "neural_avg_tricks_declared": 4.77,
+    "heuristic_avg_tricks_declared": 5.33,
+    "contract_breakdown": {
+      "RIK": {
+        "total_bids": 8,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 8,
+        "heuristic_win_rate": 0.5
+      },
+      "RIK_BETER": {
+        "total_bids": 1,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 1,
+        "heuristic_win_rate": 1.0
+      },
+      "ACHT_ALLEEN": {
+        "total_bids": 9,
+        "neural_bids": 1,
+        "neural_win_rate": 0.0,
+        "heuristic_bids": 8,
+        "heuristic_win_rate": 0.0
+      },
+      "NEGEN_ALLEEN": {
+        "total_bids": 36,
+        "neural_bids": 5,
+        "neural_win_rate": 0.4,
+        "heuristic_bids": 31,
+        "heuristic_win_rate": 0.258
+      },
+      "MISERE": {
+        "total_bids": 6,
+        "neural_bids": 1,
+        "neural_win_rate": 1.0,
+        "heuristic_bids": 5,
+        "heuristic_win_rate": 0.4
+      },
+      "TIEN_ALLEEN": {
+        "total_bids": 4,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 4,
+        "heuristic_win_rate": 0.0
+      },
+      "ELF_ALLEEN": {
+        "total_bids": 10,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 10,
+        "heuristic_win_rate": 0.0
+      },
+      "TWAALF_ALLEEN": {
+        "total_bids": 11,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 11,
+        "heuristic_win_rate": 0.091
+      },
+      "TROELA": {
+        "total_bids": 13,
+        "neural_bids": 6,
+        "neural_win_rate": 0.833,
+        "heuristic_bids": 7,
+        "heuristic_win_rate": 0.857
+      }
+    },
+    "total_games": 98,
+    "redeals": 2,
+    "timestamp": "2026-08-31 03:11:25"
+  },
+  {
+    "iteration": 9,
+    "type": "generation_9",
+    "neural_win_rate": 0.7857,
+    "declarer_win_rate": 0.4706,
+    "defender_win_rate": 0.8519,
+    "neural_avg_tricks_declared": 3.94,
+    "heuristic_avg_tricks_declared": 5.14,
+    "contract_breakdown": {
+      "RIK": {
+        "total_bids": 1,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 1,
+        "heuristic_win_rate": 0.0
+      },
+      "RIK_BETER": {
+        "total_bids": 1,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 1,
+        "heuristic_win_rate": 1.0
+      },
+      "ACHT_ALLEEN": {
+        "total_bids": 10,
+        "neural_bids": 3,
+        "neural_win_rate": 0.333,
+        "heuristic_bids": 7,
+        "heuristic_win_rate": 0.0
+      },
+      "NEGEN_ALLEEN": {
+        "total_bids": 33,
+        "neural_bids": 5,
+        "neural_win_rate": 0.0,
+        "heuristic_bids": 28,
+        "heuristic_win_rate": 0.107
+      },
+      "MISERE": {
+        "total_bids": 5,
+        "neural_bids": 1,
+        "neural_win_rate": 0.0,
+        "heuristic_bids": 4,
+        "heuristic_win_rate": 1.0
+      },
+      "TIEN_ALLEEN": {
+        "total_bids": 10,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 10,
+        "heuristic_win_rate": 0.0
+      },
+      "ELF_ALLEEN": {
+        "total_bids": 8,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 8,
+        "heuristic_win_rate": 0.0
+      },
+      "TWAALF_ALLEEN": {
+        "total_bids": 16,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 16,
+        "heuristic_win_rate": 0.0
+      },
+      "TROELA": {
+        "total_bids": 14,
+        "neural_bids": 8,
+        "neural_win_rate": 0.875,
+        "heuristic_bids": 6,
+        "heuristic_win_rate": 0.667
+      }
+    },
+    "total_games": 98,
+    "redeals": 2,
+    "timestamp": "2026-08-31 03:51:36"
+  },
+  {
+    "iteration": 10,
+    "type": "generation_10",
+    "neural_win_rate": 0.8041,
+    "declarer_win_rate": 0.625,
+    "defender_win_rate": 0.8395,
+    "neural_avg_tricks_declared": 4.88,
+    "heuristic_avg_tricks_declared": 5.43,
+    "contract_breakdown": {
+      "RIK": {
+        "total_bids": 3,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 3,
+        "heuristic_win_rate": 0.333
+      },
+      "RIK_BETER": {
+        "total_bids": 1,
+        "neural_bids": 1,
+        "neural_win_rate": 1.0,
+        "heuristic_bids": 0,
+        "heuristic_win_rate": null
+      },
+      "ACHT_ALLEEN": {
+        "total_bids": 7,
+        "neural_bids": 2,
+        "neural_win_rate": 0.5,
+        "heuristic_bids": 5,
+        "heuristic_win_rate": 0.2
+      },
+      "NEGEN_ALLEEN": {
+        "total_bids": 28,
+        "neural_bids": 5,
+        "neural_win_rate": 0.0,
+        "heuristic_bids": 23,
+        "heuristic_win_rate": 0.087
+      },
+      "MISERE": {
+        "total_bids": 4,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 4,
+        "heuristic_win_rate": 0.25
+      },
+      "TIEN_ALLEEN": {
+        "total_bids": 14,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 14,
+        "heuristic_win_rate": 0.0
+      },
+      "ELF_ALLEEN": {
+        "total_bids": 7,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 7,
+        "heuristic_win_rate": 0.0
+      },
+      "TWAALF_ALLEEN": {
+        "total_bids": 15,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 15,
+        "heuristic_win_rate": 0.067
+      },
+      "SOLO_SLIM": {
+        "total_bids": 1,
+        "neural_bids": 0,
+        "neural_win_rate": null,
+        "heuristic_bids": 1,
+        "heuristic_win_rate": 0.0
+      },
+      "TROELA": {
+        "total_bids": 17,
+        "neural_bids": 8,
+        "neural_win_rate": 1.0,
+        "heuristic_bids": 9,
+        "heuristic_win_rate": 0.778
+      }
+    },
+    "total_games": 97,
+    "redeals": 3,
+    "timestamp": "2026-08-31 04:30:56"
+  }
+]
