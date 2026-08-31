@@ -32,8 +32,8 @@ import config
 
 NUM_OPPONENTS = 3
 HAND_SIZE     = 52
-NUM_CONTRACTS = 14
-BID_HIST_SIZE = 4 * NUM_CONTRACTS  # 56
+NUM_CONTRACTS = 15
+BID_HIST_SIZE = 4 * NUM_CONTRACTS  # 60
 INPUT_SIZE    = (
     HAND_SIZE           # own remaining hand (52)
     + HAND_SIZE         # played cards (public) (52)

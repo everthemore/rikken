@@ -17,38 +17,40 @@ from typing import Optional
 # ---------------------------------------------------------------------------
 class Contract(IntEnum):
     """Bidding hierarchy in ascending order (higher value = stronger bid)."""
-    NO_BID        = -1   # Sentinel: player hasn't bid yet
-    PAS           = 0    # Pass (no bid)
-    RIK           = 1    # Partner contract: trump in C/D/S, call vraagaas, win 8+ tricks
-    RIK_BETER     = 2    # Partner contract: trump fixed to HEARTS, call vraagaas, win 8+ tricks
-    ACHT_ALLEEN   = 3    # Solo: choose trump, win 8+ tricks
-    PIEK          = 4    # Solo/Multi: no trump, win exactly 1 OR exactly 5 tricks
-    NEGEN_ALLEEN  = 5    # Solo: choose trump, win 9+ tricks
-    MISERE        = 6    # Solo/Multi: no trump, win exactly 0 tricks
-    TIEN_ALLEEN   = 7    # Solo: choose trump, win 10+ tricks
-    OPEN_PIEK     = 8    # Like Piek, but cards face-up after trick 1
-    OPEN_MISERE   = 9    # Like Misère, but cards face-up
-    ELF_ALLEEN    = 10   # Solo: choose trump, win 11+ tricks
-    TWAALF_ALLEEN = 11   # Solo: choose trump, win 12+ tricks
-    SOLO_SLIM     = 12   # Solo: choose trump, win all 13 tricks
-    TROELA        = 13   # Partner (3 Aces): 4th Ace holder is partner, 8+ tricks
+    NO_BID         = -1   # Sentinel: player hasn't bid yet
+    PAS            = 0    # Pass (no bid)
+    RIK            = 1    # Partner contract: trump in C/D/S, call vraagaas, win 8+ tricks
+    RIK_BETER      = 2    # Partner contract: trump fixed to HEARTS, call vraagaas, win 8+ tricks
+    ACHT_ALLEEN    = 3    # Solo: choose trump, win 8+ tricks
+    PIEK           = 4    # Solo/Multi: no trump, win exactly 1 OR exactly 5 tricks
+    NEGEN_ALLEEN   = 5    # Solo: choose trump, win 9+ tricks
+    MISERE         = 6    # Solo/Multi: no trump, win exactly 0 tricks
+    TIEN_ALLEEN    = 7    # Solo: choose trump, win 10+ tricks
+    OPEN_PIEK      = 8    # Like Piek, but cards face-up after trick 1
+    OPEN_MISERE    = 9    # Like Misère, but cards face-up
+    ELF_ALLEEN     = 10   # Solo: choose trump, win 11+ tricks
+    TWAALF_ALLEEN  = 11   # Solo: choose trump, win 12+ tricks
+    DERTIEN_ALLEEN = 12   # Solo: choose trump, win all 13 tricks (Grand Slam / Solo Slim)
+    SOLO_SLIM      = 12   # Alias for DERTIEN_ALLEEN
+    TROELA         = 13   # Partner (3 Aces): 4th Ace holder is partner, 8+ tricks
+    MOELA          = 14   # Partner (4 Aces + 3 Kings): 4th King holder is partner, 8+ tricks
 
     @classmethod
     def is_trump_contract(cls, c: 'Contract') -> bool:
         return c in (cls.RIK, cls.RIK_BETER, cls.ACHT_ALLEEN, cls.NEGEN_ALLEEN,
                      cls.TIEN_ALLEEN, cls.ELF_ALLEEN, cls.TWAALF_ALLEEN,
-                     cls.SOLO_SLIM, cls.TROELA)
+                     cls.DERTIEN_ALLEEN, cls.TROELA, cls.MOELA)
 
     @classmethod
     def is_solo(cls, c: 'Contract') -> bool:
         return c in (cls.ACHT_ALLEEN, cls.PIEK, cls.NEGEN_ALLEEN,
                      cls.MISERE, cls.TIEN_ALLEEN, cls.OPEN_PIEK,
                      cls.OPEN_MISERE, cls.ELF_ALLEEN, cls.TWAALF_ALLEEN,
-                     cls.SOLO_SLIM)
+                     cls.DERTIEN_ALLEEN)
 
     @classmethod
     def is_partner_contract(cls, c: 'Contract') -> bool:
-        return c in (cls.RIK, cls.RIK_BETER, cls.TROELA)
+        return c in (cls.RIK, cls.RIK_BETER, cls.TROELA, cls.MOELA)
 
     @classmethod
     def is_multi_player_allowed(cls, c: 'Contract') -> bool:
@@ -63,19 +65,20 @@ class Contract(IntEnum):
     def target_tricks(cls, c: 'Contract') -> Optional[int]:
         """Minimum tricks the declarer must win (-1 for exact-count contracts)."""
         table = {
-            cls.RIK:           8,
-            cls.RIK_BETER:     8,
-            cls.ACHT_ALLEEN:   8,
-            cls.NEGEN_ALLEEN:  9,
-            cls.TIEN_ALLEEN:  10,
-            cls.ELF_ALLEEN:   11,
-            cls.TWAALF_ALLEEN:12,
-            cls.SOLO_SLIM:    13,
-            cls.TROELA:        8,
-            cls.PIEK:         -1,   # Exact: 1 or 5 tricks
-            cls.MISERE:        0,   # Exact: 0 tricks
-            cls.OPEN_PIEK:    -1,   # Exact: 1 or 5 tricks
-            cls.OPEN_MISERE:   0,   # Exact: 0 tricks
+            cls.RIK:            8,
+            cls.RIK_BETER:      8,
+            cls.ACHT_ALLEEN:    8,
+            cls.NEGEN_ALLEEN:   9,
+            cls.TIEN_ALLEEN:   10,
+            cls.ELF_ALLEEN:    11,
+            cls.TWAALF_ALLEEN: 12,
+            cls.DERTIEN_ALLEEN:13,
+            cls.TROELA:         8,
+            cls.MOELA:          8,
+            cls.PIEK:          -1,   # Exact: 1 or 5 tricks
+            cls.MISERE:         0,   # Exact: 0 tricks
+            cls.OPEN_PIEK:     -1,   # Exact: 1 or 5 tricks
+            cls.OPEN_MISERE:    0,   # Exact: 0 tricks
         }
         return table.get(c, None)
 

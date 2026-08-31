@@ -14,11 +14,11 @@ from typing import Optional, Tuple
 
 import config
 
-NUM_CONTRACTS = 14      # PAS(0) through TROELA(13)
+NUM_CONTRACTS = 15      # PAS(0) through MOELA(14)
 NUM_PLAYERS   = 4
 HAND_SIZE     = 52
-BID_HIST_SIZE = NUM_PLAYERS * NUM_CONTRACTS   # 4 * 14 = 56
-INPUT_SIZE    = HAND_SIZE + BID_HIST_SIZE     # 108
+BID_HIST_SIZE = NUM_PLAYERS * NUM_CONTRACTS   # 4 * 15 = 60
+INPUT_SIZE    = HAND_SIZE + BID_HIST_SIZE     # 112
 
 
 class BVN(nn.Module):

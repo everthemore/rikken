@@ -50,6 +50,10 @@ def legal_bids(state: RikkenState) -> List[int]:
         if contract == Contract.TROELA:
             if ace_count < 3:
                 continue
+        if contract == Contract.MOELA:
+            king_count = int(np.sum(hand[11::13]))
+            if ace_count < 4 or king_count < 3:
+                continue
 
         c_int = int(contract)
         high_int = int(state.highest_bid)
@@ -194,5 +198,21 @@ def find_troela_partner(state: RikkenState, declarer: int) -> int:
             continue
         aces_held = int(np.sum(state.hands[p][12::13]))
         if aces_held >= 1:
+            return p
+    return (declarer + 2) % 4
+
+# ---------------------------------------------------------------------------
+# Moela partner identification
+# ---------------------------------------------------------------------------
+
+def find_moela_partner(state: RikkenState, declarer: int) -> int:
+    """
+    In Moela, declarer holds 4 Aces and 3 Kings. The player holding the 4th King is partner.
+    """
+    for p in range(4):
+        if p == declarer:
+            continue
+        kings_held = int(np.sum(state.hands[p][11::13]))
+        if kings_held >= 1:
             return p
     return (declarer + 2) % 4
