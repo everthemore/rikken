@@ -86,16 +86,19 @@ class BeliefNetwork(nn.Module):
 
     def __init__(
         self,
+        num_contracts: int = NUM_CONTRACTS,
         hidden: int = config.BN_HIDDEN,
         num_blocks: int = config.BN_NUM_BLOCKS,
         dropout: float = 0.1,
     ):
         super().__init__()
+        self.num_contracts = num_contracts
         self.hidden = hidden
+        self.input_size = HAND_SIZE + HAND_SIZE + (4 * num_contracts) + HAND_SIZE + 16
 
         # --- Input projection ---
         self.input_proj = nn.Sequential(
-            nn.Linear(INPUT_SIZE, hidden),
+            nn.Linear(self.input_size, hidden),
             nn.LayerNorm(hidden),
             nn.GELU(),
         )
@@ -106,7 +109,6 @@ class BeliefNetwork(nn.Module):
         )
 
         # --- Per-opponent output heads ---
-        # Each head predicts P(opponent p holds card c) for c in 0..51
         self.heads = nn.ModuleList([
             nn.Sequential(
                 nn.LayerNorm(hidden),
@@ -118,6 +120,20 @@ class BeliefNetwork(nn.Module):
         ])
 
         self._init_weights()
+
+    @classmethod
+    def from_checkpoint(cls, ckpt_path_or_dict, device="cpu") -> 'BeliefNetwork':
+        if isinstance(ckpt_path_or_dict, str):
+            ckpt = torch.load(ckpt_path_or_dict, map_location=device, weights_only=False)
+        else:
+            ckpt = ckpt_path_or_dict
+        sd = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
+        in_dim = sd['input_proj.0.weight'].shape[1] if 'input_proj.0.weight' in sd else INPUT_SIZE
+        n_c = (in_dim - 172) // 4
+        model = cls(num_contracts=n_c, hidden=sd['input_proj.0.weight'].shape[0]).to(device)
+        model.load_state_dict(sd)
+        model.eval()
+        return model
 
     def _init_weights(self):
         for module in self.modules():

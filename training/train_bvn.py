@@ -70,20 +70,22 @@ def train(
         resume = latest_ckpt_path
 
     if resume and os.path.exists(resume):
-        checkpoint = torch.load(resume, map_location=device)
-        if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
-            model.load_state_dict(checkpoint['model_state_dict'])
-            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            if 'scheduler_state_dict' in checkpoint and checkpoint['scheduler_state_dict']:
-                scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-            start_epoch = checkpoint.get('epoch', 0) + 1
-            best_val_loss = checkpoint.get('best_val_loss', float('inf'))
-            history = checkpoint.get('history', history)
-            log.info(f"Resumed complete state from {resume} (starting at epoch {start_epoch})")
-        else:
-            # Plain state dict fallback
-            model.load_state_dict(checkpoint)
-            log.info(f"Loaded model weights only from {resume}")
+        try:
+            checkpoint = torch.load(resume, map_location=device, weights_only=False)
+            if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+                model.load_state_dict(checkpoint['model_state_dict'])
+                optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+                if 'scheduler_state_dict' in checkpoint and checkpoint['scheduler_state_dict']:
+                    scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+                start_epoch = checkpoint.get('epoch', 0) + 1
+                best_val_loss = checkpoint.get('best_val_loss', float('inf'))
+                history = checkpoint.get('history', history)
+                log.info(f"Resumed complete state from {resume} (starting at epoch {start_epoch})")
+            else:
+                model.load_state_dict(checkpoint)
+                log.info(f"Loaded model weights only from {resume}")
+        except Exception as e:
+            log.warning(f"Could not load checkpoint {resume} ({e}) — starting fresh model weights.")
 
     for epoch in range(start_epoch, epochs + 1):
         model.train()
