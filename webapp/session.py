@@ -326,11 +326,7 @@ class GameSession:
                 break
 
         if bvn is None and os.path.exists("checkpoints/bvn_best.pt"):
-            bvn = BVN().to("cpu")
-            ckpt = torch.load("checkpoints/bvn_best.pt", map_location="cpu", weights_only=False)
-            sd = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
-            bvn.load_state_dict(sd)
-            bvn.eval()
+            bvn = BVN.from_checkpoint("checkpoints/bvn_best.pt", device="cpu")
 
         if bvn is None:
             return {"advice": "Neural BVN model not found."}
