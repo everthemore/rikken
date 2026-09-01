@@ -50,11 +50,7 @@ class NeuralAgent:
         # Load BVN
         if isinstance(bvn, str):
             if os.path.exists(bvn):
-                self.bvn = BVN().to(device)
-                ckpt = torch.load(bvn, map_location=device, weights_only=False)
-                state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
-                self.bvn.load_state_dict(state_dict)
-                self.bvn.eval()
+                self.bvn = BVN.from_checkpoint(bvn, device=device)
             else:
                 self.bvn = None
         else:
@@ -63,11 +59,7 @@ class NeuralAgent:
         # Load BN
         if isinstance(bn, str):
             if os.path.exists(bn):
-                self.bn = BeliefNetwork().to(device)
-                ckpt = torch.load(bn, map_location=device, weights_only=False)
-                state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
-                self.bn.load_state_dict(state_dict)
-                self.bn.eval()
+                self.bn = BeliefNetwork.from_checkpoint(bn, device=device)
             else:
                 self.bn = None
         else:

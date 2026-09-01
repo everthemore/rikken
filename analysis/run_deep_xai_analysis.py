@@ -100,12 +100,8 @@ def run_bidding_xai_extraction(bvn_path: str = "checkpoints/bvn_best.pt", n_samp
     print(f"  EXPLAINABLE AI: EXTRACTING BIDDING RULES & PATTERNS FROM BVN")
     print(f"=================================================================")
 
-    bvn = BVN().to("cpu")
     if os.path.exists(bvn_path):
-        ckpt = torch.load(bvn_path, map_location="cpu", weights_only=False)
-        sd = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
-        bvn.load_state_dict(sd)
-        bvn.eval()
+        bvn = BVN.from_checkpoint(bvn_path, device="cpu")
         print(f"Loaded trained BVN model from {bvn_path}")
     else:
         print(f"Error: BVN model not found at {bvn_path}")
@@ -117,7 +113,7 @@ def run_bidding_xai_extraction(bvn_path: str = "checkpoints/bvn_best.pt", n_samp
     y_actions = []
     q_pass_values = []
     q_best_bid_values = []
-    contract_bids = {i: [] for i in range(14)}
+    contract_bids = {i: [] for i in range(15)}
 
     print(f"Evaluating {n_samples:,} simulated board situations...")
     for i in range(n_samples // 4):
@@ -145,7 +141,7 @@ def run_bidding_xai_extraction(bvn_path: str = "checkpoints/bvn_best.pt", n_samp
     y = np.array(y_actions)
 
     print("\n--- 1. Bidding Distribution Chosen by Q-Network ---")
-    for b in range(14):
+    for b in range(15):
         c_name = Contract(b).name if b >= 0 else "PAS"
         count = len(contract_bids[b])
         pct = (count / len(y)) * 100
@@ -186,7 +182,7 @@ def run_bidding_xai_extraction(bvn_path: str = "checkpoints/bvn_best.pt", n_samp
 
     return {
         'total_samples': len(y),
-        'bidding_counts': {Contract(b).name: len(contract_bids[b]) for b in range(14)},
+        'bidding_counts': {Contract(b).name: len(contract_bids[b]) for b in range(15)},
     }
 
 

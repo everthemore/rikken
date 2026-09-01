@@ -2,7 +2,8 @@
 networks/bvn.py — Bidding Value Network (BVN).
 
 Architecture: Transformer encoder -> MLP head with Tanh activation.
-Outputs continuous Expected Value Q(s, a) in [-1.0, +1.0] across all 14 contracts.
+Outputs continuous Expected Value Q(s, a) in [-1.0, +1.0] across all contracts.
+Supports dynamic contract sizing (14 or 15) for seamless checkpoint compatibility.
 """
 
 from __future__ import annotations
@@ -28,6 +29,7 @@ class BVN(nn.Module):
 
     def __init__(
         self,
+        num_contracts: int = NUM_CONTRACTS,
         d_model: int = config.BVN_D_MODEL,
         nhead: int = config.BVN_NHEAD,
         num_layers: int = config.BVN_NUM_LAYERS,
@@ -35,9 +37,11 @@ class BVN(nn.Module):
         dropout: float = 0.1,
     ):
         super().__init__()
+        self.num_contracts = num_contracts
+        self.input_size = HAND_SIZE + NUM_PLAYERS * num_contracts
         self.d_model = d_model
 
-        self.input_proj = nn.Linear(INPUT_SIZE, d_model)
+        self.input_proj = nn.Linear(self.input_size, d_model)
 
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=d_model,
@@ -55,7 +59,7 @@ class BVN(nn.Module):
             nn.GELU(),
             nn.LayerNorm(mlp_hidden),
             nn.Dropout(dropout),
-            nn.Linear(mlp_hidden, NUM_CONTRACTS),
+            nn.Linear(mlp_hidden, num_contracts),
             nn.Tanh(),  # Direct Expected Value Q(s, a) in [-1.0, +1.0]
         )
 
@@ -65,6 +69,19 @@ class BVN(nn.Module):
         for p in self.parameters():
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
+
+    @classmethod
+    def from_checkpoint(cls, ckpt_path_or_dict, device="cpu") -> 'BVN':
+        if isinstance(ckpt_path_or_dict, str):
+            ckpt = torch.load(ckpt_path_or_dict, map_location=device, weights_only=False)
+        else:
+            ckpt = ckpt_path_or_dict
+        sd = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
+        n_c = sd['head.4.weight'].shape[0] if 'head.4.weight' in sd else NUM_CONTRACTS
+        model = cls(num_contracts=n_c).to(device)
+        model.load_state_dict(sd)
+        model.eval()
+        return model
 
     def forward(
         self,
@@ -87,21 +104,23 @@ class BVN(nn.Module):
         bids: np.ndarray,
         device: str = config.DEVICE,
     ) -> np.ndarray:
-        """
-        Inference convenience method returning Q(s, a) in [-1.0, +1.0] for all 14 actions.
-        """
         self.eval()
         with torch.no_grad():
             hand_t = torch.tensor(hand, dtype=torch.float32, device=device).unsqueeze(0)
-            bid_hist_1hot = np.zeros((NUM_PLAYERS, NUM_CONTRACTS), dtype=np.float32)
+            bid_hist_1hot = np.zeros((NUM_PLAYERS, self.num_contracts), dtype=np.float32)
             for p in range(NUM_PLAYERS):
                 b = bids[p]
-                if 0 <= b < NUM_CONTRACTS:
+                if 0 <= b < self.num_contracts:
                     bid_hist_1hot[p, b] = 1.0
             bid_hist_t = torch.tensor(bid_hist_1hot.flatten(), dtype=torch.float32, device=device).unsqueeze(0)
 
             q_vals, _ = self.forward(hand_t, bid_hist_t)
-            return q_vals.squeeze(0).cpu().numpy()
+            res = q_vals.squeeze(0).cpu().numpy()
+            if self.num_contracts < NUM_CONTRACTS:
+                full_res = np.full(NUM_CONTRACTS, -1.0, dtype=np.float32)
+                full_res[:self.num_contracts] = res
+                return full_res
+            return res
 
 
 class BVNLoss(nn.Module):
