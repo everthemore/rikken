@@ -496,5 +496,52 @@ class TestFullGame:
         assert completed == 1000, f"Only {completed}/1000 games completed"
 
 
+
+def test_moela_bidding_and_partner_assignment():
+    from engine.card import card_id
+    from engine.rules import legal_bids
+    from engine.state import Contract, Phase
+    from engine.game import RikkenGame
+    import numpy as np
+
+    game = RikkenGame()
+    state = game.reset()
+
+    # Construct Moela hand: Player 0 has 4 Aces and 3 Kings
+    p0_cards = [card_id(0, 12), card_id(1, 12), card_id(2, 12), card_id(3, 12),
+                card_id(0, 11), card_id(1, 11), card_id(2, 11)]
+    for c in range(52):
+        if len(p0_cards) == 13: break
+        if c not in p0_cards and c != card_id(3, 11):
+            p0_cards.append(c)
+
+    for p in range(4):
+        state.hands[p] = np.zeros(52, dtype=np.int8)
+
+    for c in p0_cards:
+        state.hands[0][c] = 1
+
+    # Give Player 2 the 4th King
+    state.hands[2][card_id(3, 11)] = 1
+    assigned = set(p0_cards) | {card_id(3, 11)}
+    remaining = [c for c in range(52) if c not in assigned]
+    state.hands[1][remaining[:13]] = 1
+    state.hands[2][remaining[13:25]] = 1
+    state.hands[3][remaining[25:38]] = 1
+
+    legal = legal_bids(state)
+    assert int(Contract.MOELA) in legal
+
+    state, reward = game.step(state, int(Contract.MOELA))
+    state, reward = game.step(state, int(Contract.PAS))
+    state, reward = game.step(state, int(Contract.PAS))
+    state, reward = game.step(state, int(Contract.PAS))
+
+    assert state.contract == Contract.MOELA
+    assert state.declarer == 0
+    assert state.partner == 2
+    assert state.phase == Phase.TRICK_TAKING
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

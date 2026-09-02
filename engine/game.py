@@ -20,6 +20,7 @@ from engine.state import RikkenState, Contract, Phase
 from engine.rules import (
     legal_bids, legal_plays, update_void_matrix,
     check_and_trigger_aasvragen, find_troela_partner,
+    find_moela_partner,
 )
 from engine.early_stop import should_early_stop
 
