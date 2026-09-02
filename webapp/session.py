@@ -1,8 +1,10 @@
 """
 webapp/session.py — Game session manager connecting the Rikken engine to web clients.
 """
-
 from __future__ import annotations
+from networks.bvn import NUM_CONTRACTS
+
+
 import os
 import time
 import numpy as np
@@ -364,10 +366,10 @@ class GameSession:
             if c >= 0:
                 trick_one_hot[c] = 1
 
-        bids_one_hot = np.zeros((4, 14), dtype=np.float32)
+        bids_one_hot = np.zeros((4, NUM_CONTRACTS), dtype=np.float32)
         for p_idx in range(4):
             b = self.state.bids[p_idx]
-            if 0 <= b < 14:
+            if 0 <= b < NUM_CONTRACTS:
                 bids_one_hot[p_idx, b] = 1.0
 
         probs = agent.bn.predict(

@@ -15,7 +15,7 @@ from sklearn.ensemble import RandomForestClassifier
 from engine.card import NUM_SUITS, NUM_RANKS, rank_of, suit_of, cards_in_suit, SUIT_MASKS
 from engine.state import Contract
 
-CONTRACT_NAMES = [Contract(i).name for i in range(14)]
+CONTRACT_NAMES = [Contract(i).name for i in range(15)]
 
 FEATURE_NAMES = [
     'HCP', 'Ace_Count', 'King_Count', 'Queen_Count', 'Jack_Count',
@@ -119,7 +119,7 @@ def run_rule_extraction(max_shards: int = 25):
 
     rules_summary = {}
 
-    for c in range(1, 14):
+    for c in range(1, 15):
         name = CONTRACT_NAMES[c]
         X = np.array(contract_data[c]['X'])
         y = np.array(contract_data[c]['y'])

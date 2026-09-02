@@ -6,8 +6,10 @@ Memory-efficient design:
   - Keeps arrays in compact int8 format until batched.
   - Automatically handles multi-worker DataLoader partitioning and epoch shuffling.
 """
-
 from __future__ import annotations
+from networks.bvn import NUM_CONTRACTS
+
+
 import os
 import glob
 import math
@@ -128,9 +130,17 @@ class StreamingShardDataset(IterableDataset):
                     np.random.shuffle(indices)
 
                 for idx in indices:
+                    bh = bid_hist[idx].astype(np.float32)
+                    if bh.size == 4 * 14:
+                        bh_full = np.zeros((4, NUM_CONTRACTS), dtype=np.float32)
+                        bh_full[:, :14] = bh.reshape(4, 14)
+                        bh_t = torch.from_numpy(bh_full)
+                    else:
+                        bh_t = torch.from_numpy(bh).view(4, NUM_CONTRACTS)
+
                     yield (
                         torch.from_numpy(hands[idx]).float(),
-                        torch.from_numpy(bid_hist[idx]).float().view(4, 14),
+                        bh_t,
                         torch.tensor(bid_taken[idx], dtype=torch.long),
                         torch.tensor(outcome[idx], dtype=torch.float32),
                     )
@@ -151,10 +161,18 @@ class StreamingShardDataset(IterableDataset):
                     np.random.shuffle(indices)
 
                 for idx in indices:
+                    bh = bid_hist[idx].astype(np.float32)
+                    if bh.size == 4 * 14:
+                        bh_full = np.zeros((4, NUM_CONTRACTS), dtype=np.float32)
+                        bh_full[:, :14] = bh.reshape(4, 14)
+                        bh_t = torch.from_numpy(bh_full)
+                    else:
+                        bh_t = torch.from_numpy(bh).view(4, NUM_CONTRACTS)
+
                     yield (
                         torch.from_numpy(own_hand[idx]).float(),
                         torch.from_numpy(played[idx]).float(),
-                        torch.from_numpy(bid_hist[idx]).float().view(4, 14),
+                        bh_t,
                         torch.from_numpy(trick[idx]).float(),
                         torch.from_numpy(void_mat[idx]).float().view(4, 4),
                         torch.from_numpy(opp_hands[idx]).float().view(3, 52),

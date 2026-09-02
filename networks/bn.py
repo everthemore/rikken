@@ -211,9 +211,9 @@ class BeliefNetwork(nn.Module):
         """
         self.eval()
         if bid_history.ndim == 1 and len(bid_history) == 4:
-            bids_oh = np.zeros((4, 14), dtype=np.float32)
+            bids_oh = np.zeros((4, self.num_contracts), dtype=np.float32)
             for p_idx, b in enumerate(bid_history):
-                if 0 <= b < 14:
+                if 0 <= b < self.num_contracts:
                     bids_oh[p_idx, b] = 1.0
             bid_history = bids_oh
         elif bid_history.size == 52:

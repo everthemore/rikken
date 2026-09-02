@@ -18,8 +18,10 @@ Usage:
     python -m training.data_gen --games 1000000 --workers 4
     python -m training.data_gen --games 1000000 --workers 1   # safer on some systems
 """
-
 from __future__ import annotations
+from networks.bvn import NUM_CONTRACTS
+
+
 import os
 import sys
 import numpy as np
@@ -57,7 +59,7 @@ def run_one_game(seed: int) -> dict:
     state = game.reset()
     bid_records = []
     play_records = []
-    prev_bid_history = np.zeros((4, 14), dtype=np.int8)
+    prev_bid_history = np.zeros((4, NUM_CONTRACTS), dtype=np.int8)
 
     # ---- Bidding phase ----
     while state.phase == Phase.BIDDING:

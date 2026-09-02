@@ -13,8 +13,10 @@ Features:
 Usage:
     python -m training.self_play --games 1000 --rollouts 200 --worker-id 0 --output-dir data/self_play/
 """
-
 from __future__ import annotations
+from networks.bvn import NUM_CONTRACTS
+
+
 import os
 import argparse
 import time
@@ -41,7 +43,7 @@ def run_self_play_game(
     state = game.reset()
     bid_records = []
     play_records = []
-    prev_bid_history = np.zeros((4, 14), dtype=np.int8)
+    prev_bid_history = np.zeros((4, NUM_CONTRACTS), dtype=np.int8)
 
     # ---- Bidding ----
     while state.phase == Phase.BIDDING:
