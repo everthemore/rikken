@@ -44,15 +44,17 @@ class RikkenGame:
         self.troela_call_rate = troela_call_rate
         self.rng = rng or np.random.default_rng()
         self._prev_trick_seq: Optional[list] = None
+        self._prev_hands: Optional[np.ndarray] = None
 
     def reset(self, seed: Optional[int] = None) -> RikkenState:
         if seed is not None:
             self.rng = np.random.default_rng(seed)
 
         deck = clumping_shuffle(
-            self._prev_trick_seq,
-            self.rng,
-            self.shuffle_intensity,
+            prev_trick_sequence=self._prev_trick_seq,
+            rng=self.rng,
+            shuffle_intensity=self.shuffle_intensity,
+            prev_remaining_hands=self._prev_hands,
         )
         hands = deal(deck)
 
@@ -252,6 +254,7 @@ class RikkenGame:
                 s.reward = early_reward
                 self._compute_rewards_vector(s)
                 self._prev_trick_seq = s.trick_sequence
+                self._prev_hands = s.hands.copy()
                 return s, s.reward
 
         if s.trick_count == 13:

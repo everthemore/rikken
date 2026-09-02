@@ -497,6 +497,36 @@ class TestFullGame:
 
 
 
+def test_reconstruct_deck_with_remaining_sorted_hands():
+    from engine.deck import reconstruct_deck_from_game, clumping_shuffle, deal
+    import numpy as np
+
+    # 1. Test full trick sequence (13 tricks)
+    cards = list(range(52))
+    trick_seq = [(i % 4, cards[i*4:i*4+4]) for i in range(13)]
+    deck = reconstruct_deck_from_game(trick_sequence=trick_seq)
+    assert len(deck) == 52
+    assert sorted(deck) == list(range(52))
+
+    # 2. Test early stop at 9 tricks (36 cards) + 4 remaining hands (4 cards each)
+    partial_tricks = trick_seq[:9]
+    remaining_hands = np.zeros((4, 52), dtype=np.int8)
+    for p in range(4):
+        # 4 cards per player
+        p_cards = cards[36 + p*4 : 36 + (p+1)*4]
+        for c in p_cards:
+            remaining_hands[p, c] = 1
+
+    deck = reconstruct_deck_from_game(trick_sequence=partial_tricks, remaining_hands=remaining_hands)
+    assert len(deck) == 52
+    assert sorted(deck) == list(range(52))
+
+    # Verify hands can be dealt 6-then-7 without error
+    hands = deal(deck)
+    assert hands.shape == (4, 52)
+    assert np.all(hands.sum(axis=1) == 13)
+
+
 def test_moela_bidding_and_partner_assignment():
     from engine.card import card_id
     from engine.rules import legal_bids

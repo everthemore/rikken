@@ -26,28 +26,40 @@ import config
 # Deck reconstruction after a game
 # ---------------------------------------------------------------------------
 
-def reconstruct_deck_from_tricks(trick_sequence: list) -> np.ndarray:
+def reconstruct_deck_from_game(
+    trick_sequence: Optional[list] = None,
+    remaining_hands: Optional[np.ndarray] = None,
+) -> np.ndarray:
     """
-    Rebuild the physical deck order as it would exist after collecting tricks.
+    Rebuild the physical deck order as it would exist after gathering tricks and hands.
 
-    In Rikken, each trick winner "collects" the 4 cards of the trick. The tricks
-    are stacked face-down in front of the winning team. After the hand, the
-    collector assembles these stacks (in trick order) to form the deck.
-
-    Args:
-        trick_sequence: List of (winner_seat, [card_p0, card_p1, card_p2, card_p3])
-                        in trick-play order.
-
-    Returns:
-        np.ndarray of shape (52,) — ordered card ids representing the physical deck.
+    In authentic Rikken:
+      1. Tricks won are collected in 4-card packets in trick-play order.
+      2. If a hand terminates early (early stop or concession) or in all-pass redeals,
+         players discard their remaining cards onto the pile. Players hold their cards
+         sorted by suit and rank in hand, preserving natural suit clusters.
     """
     deck = []
-    for _winner, cards in trick_sequence:
-        deck.extend(cards)
+    if trick_sequence:
+        for _winner, cards in trick_sequence:
+            deck.extend(cards)
+
+    if remaining_hands is not None and len(deck) < NUM_CARDS:
+        for p in range(4):
+            held_cards = np.where(remaining_hands[p] == 1)[0]
+            # Sort by suit first (0..3), then rank (0..12) as held in human hands
+            held_sorted = sorted(held_cards, key=lambda c: (c // 13, c % 13))
+            deck.extend(held_sorted)
+
     if len(deck) != NUM_CARDS:
-        # Fallback: return a standard ordered deck
+        # Fallback: standard ordered deck (suits grouped together)
         return np.arange(NUM_CARDS, dtype=np.int8)
     return np.array(deck, dtype=np.int8)
+
+
+def reconstruct_deck_from_tricks(trick_sequence: list) -> np.ndarray:
+    """Backward-compatible wrapper for reconstruct_deck_from_game."""
+    return reconstruct_deck_from_game(trick_sequence=trick_sequence)
 
 
 # ---------------------------------------------------------------------------
@@ -93,9 +105,10 @@ def _riffle_pass(deck: np.ndarray, rng: np.random.Generator) -> np.ndarray:
 
 
 def clumping_shuffle(
-    prev_trick_sequence: Optional[list],
-    rng: np.random.Generator,
+    prev_trick_sequence: Optional[list] = None,
+    rng: Optional[np.random.Generator] = None,
     shuffle_intensity: int = config.SHUFFLE_INTENSITY,
+    prev_remaining_hands: Optional[np.ndarray] = None,
 ) -> np.ndarray:
     """
     Shuffle the deck with realistic clumping from the previous game's tricks.
@@ -115,12 +128,13 @@ def clumping_shuffle(
     Returns:
         np.ndarray of shape (52,) — shuffled card order ready for dealing.
     """
-    if prev_trick_sequence and len(prev_trick_sequence) == 13:
-        deck = reconstruct_deck_from_tricks(prev_trick_sequence)
-    else:
-        # First game or invalid sequence: start from ordered deck, apply extra pass
-        deck = np.arange(NUM_CARDS, dtype=np.int8)
-        shuffle_intensity = max(shuffle_intensity, 4)  # a bit more mixing first time
+    if rng is None:
+        rng = np.random.default_rng()
+
+    deck = reconstruct_deck_from_game(
+        trick_sequence=prev_trick_sequence,
+        remaining_hands=prev_remaining_hands,
+    )
 
     for _ in range(shuffle_intensity):
         deck = _riffle_pass(deck, rng)
