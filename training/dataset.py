@@ -71,25 +71,34 @@ class StreamingShardDataset(IterableDataset):
         if not shard_files:
             raise FileNotFoundError(f"No .npz shards found in {data_path}")
 
-        if len(shard_files) == 1:
-            self.shards = shard_files
-        else:
-            split_idx = max(1, int(len(shard_files) * train_frac))
-            if split == 'train':
-                self.shards = shard_files[:split_idx]
-            else:
-                self.shards = shard_files[split_idx:] if split_idx < len(shard_files) else shard_files[-1:]
+        # Safely filter all candidate files to only valid non-empty shards containing the required key
+        key_needed = 'bvn_hands' if mode == 'bvn' else 'bn_own'
+        valid_shards = []
+        samples_per_shard = 0
 
-        # Precompute total sample count from first shard
-        if self.shards:
-            sample_data = np.load(self.shards[0])
-            if mode == 'bvn':
-                samples_per_shard = len(sample_data['bvn_hands'])
-            else:
-                samples_per_shard = len(sample_data['bn_own'])
-            self.total_samples = samples_per_shard * len(self.shards)
+        for s_path in shard_files:
+            try:
+                with np.load(s_path) as s_data:
+                    if key_needed in s_data and len(s_data[key_needed]) > 0:
+                        valid_shards.append(s_path)
+                        if samples_per_shard == 0:
+                            samples_per_shard = len(s_data[key_needed])
+            except Exception:
+                continue
+
+        if not valid_shards:
+            raise FileNotFoundError(f"No valid .npz shards containing '{key_needed}' found in {data_path}")
+
+        if len(valid_shards) == 1:
+            self.shards = valid_shards
         else:
-            self.total_samples = 0
+            split_idx = max(1, int(len(valid_shards) * train_frac))
+            if split == 'train':
+                self.shards = valid_shards[:split_idx]
+            else:
+                self.shards = valid_shards[split_idx:] if split_idx < len(valid_shards) else valid_shards[-1:]
+
+        self.total_samples = samples_per_shard * len(self.shards)
 
     def __len__(self) -> int:
         return self.total_samples

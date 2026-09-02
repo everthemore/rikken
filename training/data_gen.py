@@ -156,6 +156,9 @@ def _pack_shard(records: List[dict], shard_path: str) -> None:
             bn_void.append(rec['void_matrix'].flatten())
             bn_opp.append(rec['opp_hands'].flatten())
 
+    if not bvn_hands and not bn_own:
+        return
+
     save_dict = {}
     if bvn_hands:
         save_dict.update({
