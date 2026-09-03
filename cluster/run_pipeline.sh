@@ -121,7 +121,7 @@ for (( iter=START_ITER; iter<=END_ITER; iter++ )); do
         $EXTRA_DEP \
         --array=0-${ARRAY_MAX} \
         --export=ALL,ITERATION=${iter},GAMES_PER_WORKER=${GAMES_PER_WORKER},ROLLOUTS=${ROLLOUTS},DETERMINIZATIONS=${DETERMINIZATIONS} \
-        cluster/submit_self_play.slurm)
+        cluster/submit_self_play.slurm "${GAMES_PER_WORKER}" "${ROLLOUTS}" "${DETERMINIZATIONS}" "${iter}")
 
     SELF_PLAY_JOB=$(echo "$SELF_PLAY_JOB" | cut -d';' -f1)
     echo "  -> Self-Play Array Job ID: $SELF_PLAY_JOB"

@@ -51,11 +51,11 @@ PROJECT_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
 cd "$PROJECT_DIR"
 export PYTHONPATH="$PROJECT_DIR:$PYTHONPATH"
 
-# Parameters
-GAMES_PER_WORKER=${GAMES_PER_WORKER:-500}
-ROLLOUTS=${ROLLOUTS:-400}
-DETERMINIZATIONS=${DETERMINIZATIONS:-20}
-ITERATION=${ITERATION:-1}
+# Parameters (supports positional args $1-$4 with fallback to env vars and safe defaults)
+GAMES_PER_WORKER=${1:-${GAMES_PER_WORKER:-100}}
+ROLLOUTS=${2:-${ROLLOUTS:-100}}
+DETERMINIZATIONS=${3:-${DETERMINIZATIONS:-15}}
+ITERATION=${4:-${ITERATION:-1}}
 OUTPUT_DIR="data/self_play/iter_${ITERATION}"
 
 mkdir -p "$OUTPUT_DIR" cluster/slurm_logs

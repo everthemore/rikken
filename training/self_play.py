@@ -179,14 +179,15 @@ def generate_self_play(
         if res.get('declarer_won'):
             wins += 1
 
-        if (i + 1) % max(1, n_games // 10) == 0 or (i + 1) == n_games:
+        if (i + 1) % max(1, n_games // 5) == 0 or (i + 1) == n_games:
             elapsed = time.time() - t0
             rate = (i + 1) / elapsed
             print(f"[Worker {worker_id:03d}] Game {i+1:5d}/{n_games} | {rate:.1f} g/s | WinRate: {wins/(i+1):.1%}")
+            # Incremental save so data is always preserved even if interrupted
+            shard_path = os.path.join(output_dir, f"self_play_shard_{worker_id:04d}.npz")
+            _pack_shard(all_records, shard_path)
 
-    shard_path = os.path.join(output_dir, f"self_play_shard_{worker_id:04d}.npz")
-    _pack_shard(all_records, shard_path)
-    print(f"[Worker {worker_id:03d}] Saved {len(all_records)} records to {shard_path}")
+    print(f"[Worker {worker_id:03d}] Completed all {n_games} games. Saved {len(all_records)} records to {shard_path}")
 
 
 if __name__ == '__main__':
