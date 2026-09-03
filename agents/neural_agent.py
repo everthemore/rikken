@@ -41,8 +41,10 @@ class NeuralAgent:
         n_rollouts: int = config.ISMCTS_ROLLOUTS,
         device: str = config.DEVICE,
         rng: Optional[np.random.Generator] = None,
+        epsilon: float = 0.0,
     ):
         self.seat = seat
+        self.epsilon = epsilon
         self.game = game
         self.device = device
         self.rng = rng or np.random.default_rng()
@@ -107,6 +109,12 @@ class NeuralAgent:
         p = self.seat
         hand = state.hands[p]
         bids = state.bids
+
+        # Epsilon-greedy exploration during self-play data collection
+        if self.epsilon > 0 and self.rng.random() < self.epsilon:
+            non_pass_legal = [b for b in legal if b != int(Contract.PAS)]
+            if non_pass_legal:
+                return int(self.rng.choice(non_pass_legal))
 
         q_scores = self.bvn.predict_ev(hand=hand, bids=bids, device=self.device)
 

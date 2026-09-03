@@ -127,6 +127,7 @@ def generate_self_play(
     output_dir: str = 'data/self_play',
     device: str = config.DEVICE,
     seed: Optional[int] = None,
+    epsilon: float = 0.15,
 ) -> None:
     """Run a batch of self-play games and save the shard."""
     os.makedirs(output_dir, exist_ok=True)
@@ -153,6 +154,7 @@ def generate_self_play(
             n_rollouts=rollouts,
             device=device,
             rng=rng,
+            epsilon=epsilon,
         )
         for p in range(4)
     ]
@@ -164,8 +166,17 @@ def generate_self_play(
 
     print(f"[Worker {worker_id:03d}] Starting {n_games:,} self-play games (Rollouts: {rollouts}, Det: {determinizations})...")
 
-    for i in range(n_games):
+    games_completed = 0
+    total_deals = 0
+    max_deals = n_games * 15
+
+    while games_completed < n_games and total_deals < max_deals:
+        total_deals += 1
         res = run_self_play_game(agents, game, rng)
+        if res.get('contract', 0) == 0 or not res.get('play_records'):
+            # All-pass redeal: re-deal cards until an actual contract is played
+            continue
+
         for rec in res['bid_records']:
             rec['type'] = 'bid'
             all_records.append(rec)
@@ -173,21 +184,24 @@ def generate_self_play(
             rec['type'] = 'play'
             all_records.append(rec)
 
+        games_completed += 1
         c = res['contract']
-        cname = Contract(c).name if c >= 0 else 'REDEAL'
+        cname = Contract(c).name if c >= 0 else 'UNKNOWN'
         contract_stats[cname] = contract_stats.get(cname, 0) + 1
         if res.get('declarer_won'):
             wins += 1
 
-        if (i + 1) % max(1, n_games // 5) == 0 or (i + 1) == n_games:
+        if games_completed % max(1, n_games // 5) == 0 or games_completed == n_games:
             elapsed = time.time() - t0
-            rate = (i + 1) / elapsed
-            print(f"[Worker {worker_id:03d}] Game {i+1:5d}/{n_games} | {rate:.1f} g/s | WinRate: {wins/(i+1):.1%}")
+            rate = games_completed / elapsed
+            print(f"[Worker {worker_id:03d}] Game {games_completed:5d}/{n_games} (Deals: {total_deals}) | {rate:.1f} g/s | WinRate: {wins/games_completed:.1%}")
             # Incremental save so data is always preserved even if interrupted
             shard_path = os.path.join(output_dir, f"self_play_shard_{worker_id:04d}.npz")
             _pack_shard(all_records, shard_path)
 
-    print(f"[Worker {worker_id:03d}] Completed all {n_games} games. Saved {len(all_records)} records to {shard_path}")
+    shard_path = os.path.join(output_dir, f"self_play_shard_{worker_id:04d}.npz")
+    _pack_shard(all_records, shard_path)
+    print(f"[Worker {worker_id:03d}] Completed {games_completed} played games (Deals: {total_deals}). Saved {len(all_records)} records to {shard_path}")
 
 
 if __name__ == '__main__':
@@ -201,6 +215,7 @@ if __name__ == '__main__':
     parser.add_argument('--bn',               type=str, default='checkpoints/bn_best.pt')
     parser.add_argument('--device',           type=str, default=config.DEVICE)
     parser.add_argument('--seed',             type=int, default=None)
+    parser.add_argument('--epsilon',          type=float, default=0.15)
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -214,4 +229,5 @@ if __name__ == '__main__':
         output_dir=args.output_dir,
         device=args.device,
         seed=args.seed,
+        epsilon=args.epsilon,
     )

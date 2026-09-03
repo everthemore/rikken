@@ -98,27 +98,44 @@ def run_stratified_game(
     bid_records = []
     play_records = []
 
-    # Select declarer (seat 0)
-    declarer = 0
-    hand_d = state.hands[declarer]
-
-    # For Troela & Moela, ensure qualifying condition
+    # Select the player whose dealt hand is most suited for target_contract
     if target_contract == Contract.TROELA:
-        ace_count = int(np.sum(hand_d[12::13]))
-        if ace_count < 3:
-            # Re-deal until declarer has 3+ aces
-            for _ in range(50):
-                state = game.reset()
-                hand_d = state.hands[declarer]
-                if int(np.sum(hand_d[12::13])) >= 3:
-                    break
-    elif target_contract == Contract.MOELA:
-        # Re-deal until declarer has 4 Aces and 3 Kings
-        for _ in range(200):
-            state = game.reset()
-            hand_d = state.hands[declarer]
-            if int(np.sum(hand_d[12::13])) == 4 and int(np.sum(hand_d[11::13])) >= 3:
+        for _ in range(50):
+            ace_counts = [int(np.sum(state.hands[p][12::13])) for p in range(4)]
+            if max(ace_counts) >= 3:
+                declarer = int(np.argmax(ace_counts))
                 break
+            state = game.reset()
+        else:
+            declarer = 0
+    elif target_contract == Contract.MOELA:
+        for _ in range(200):
+            moela_candidates = [p for p in range(4) if int(np.sum(state.hands[p][12::13])) == 4 and int(np.sum(state.hands[p][11::13])) >= 3]
+            if moela_candidates:
+                declarer = moela_candidates[0]
+                break
+            state = game.reset()
+        else:
+            declarer = 0
+    elif Contract.is_trump_contract(target_contract):
+        # Pick player with strongest/longest trump suit
+        best_p, best_len = 0, 0
+        for p in range(4):
+            max_suit = max(int(np.sum(state.hands[p][s*13:(s+1)*13])) for s in range(4))
+            if max_suit > best_len:
+                best_len = max_suit
+                best_p = p
+        declarer = best_p
+    elif target_contract in (Contract.MISERE, Contract.OPEN_MISERE):
+        # Pick player with lowest cards / fewest honors
+        honor_counts = [int(np.sum(state.hands[p][9::13]) + np.sum(state.hands[p][10::13]) + np.sum(state.hands[p][11::13]) + np.sum(state.hands[p][12::13])) for p in range(4)]
+        declarer = int(np.argmin(honor_counts))
+    elif target_contract in (Contract.PIEK, Contract.OPEN_PIEK):
+        # Pick player with most high honors
+        honor_counts = [int(np.sum(state.hands[p][9::13]) + np.sum(state.hands[p][10::13]) + np.sum(state.hands[p][11::13]) + np.sum(state.hands[p][12::13])) for p in range(4)]
+        declarer = int(np.argmax(honor_counts))
+    else:
+        declarer = int(rng.integers(0, 4))
 
     # Record bidding action
     prev_bid_history = np.zeros((4, NUM_CONTRACTS), dtype=np.int8)
@@ -132,13 +149,14 @@ def run_stratified_game(
     })
 
     # Other players pass
-    for p in range(1, 4):
-        bid_records.append({
-            'player': p,
-            'hand': state.hands[p].copy(),
-            'bid_history': prev_bid_history.copy(),
-            'bid_taken': int(Contract.PAS),
-        })
+    for p in range(4):
+        if p != declarer:
+            bid_records.append({
+                'player': p,
+                'hand': state.hands[p].copy(),
+                'bid_history': prev_bid_history.copy(),
+                'bid_taken': int(Contract.PAS),
+            })
 
     # Set up declaration
     state = setup_forced_declaration(state, declarer, target_contract, agents[declarer], game)
