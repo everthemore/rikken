@@ -76,6 +76,7 @@ if [ "$WITH_FOUNDATION" = true ]; then
         --export=ALL,GAMES_PER_CONTRACT=10,ROLLOUTS=${ROLLOUTS},DETERMINIZATIONS=${DETERMINIZATIONS},OUTPUT_DIR="data/stratified" \
         cluster/submit_stratified.slurm)
 
+    STRAT_JOB=$(echo "$STRAT_JOB" | cut -d';' -f1)
     echo "  -> Stratified Generator Array Job ID: $STRAT_JOB"
 
     echo "[Phase 1] Scheduling GPU Foundation Training (afterok:$STRAT_JOB)..."
@@ -85,6 +86,7 @@ if [ "$WITH_FOUNDATION" = true ]; then
         --export=ALL,DATA_PATH="data/stratified",MODEL_PATH="checkpoints",EPOCHS=15,BATCH_SIZE=512 \
         cluster/submit_train_foundation.slurm)
 
+    FOUNDATION_JOB=$(echo "$FOUNDATION_JOB" | cut -d';' -f1)
     echo "  -> Foundation Training Job ID: $FOUNDATION_JOB"
     PREV_RETRAIN_JOB="$FOUNDATION_JOB"
 fi
@@ -121,6 +123,7 @@ for (( iter=START_ITER; iter<=END_ITER; iter++ )); do
         --export=ALL,ITERATION=${iter},GAMES_PER_WORKER=${GAMES_PER_WORKER},ROLLOUTS=${ROLLOUTS},DETERMINIZATIONS=${DETERMINIZATIONS} \
         cluster/submit_self_play.slurm)
 
+    SELF_PLAY_JOB=$(echo "$SELF_PLAY_JOB" | cut -d';' -f1)
     echo "  -> Self-Play Array Job ID: $SELF_PLAY_JOB"
 
     # Step 2: Submit GPU Retraining on ALICE GPU nodes (runs after this generation's self-play completes)
@@ -131,6 +134,7 @@ for (( iter=START_ITER; iter<=END_ITER; iter++ )); do
         --export=ALL,ITERATION=${iter},BUFFER_WINDOW=${BUFFER_WINDOW},EPOCHS=${RETRAIN_EPOCHS} \
         cluster/submit_retrain.slurm)
 
+    RETRAIN_JOB=$(echo "$RETRAIN_JOB" | cut -d';' -f1)
     echo "  -> GPU Retraining Job ID: $RETRAIN_JOB"
     PREV_RETRAIN_JOB="$RETRAIN_JOB"
 done

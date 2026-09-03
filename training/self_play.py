@@ -14,6 +14,9 @@ Usage:
     python -m training.self_play --games 1000 --rollouts 200 --worker-id 0 --output-dir data/self_play/
 """
 from __future__ import annotations
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from networks.bvn import NUM_CONTRACTS
 
 

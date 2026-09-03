@@ -7,6 +7,9 @@ Guarantees balanced representation across all 15 Rikken contracts.
 """
 
 from __future__ import annotations
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from networks.bvn import NUM_CONTRACTS
 
 import os

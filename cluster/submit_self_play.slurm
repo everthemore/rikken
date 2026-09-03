@@ -70,7 +70,7 @@ echo "  Games: $GAMES_PER_WORKER | Rollouts: $ROLLOUTS | Det: $DETERMINIZATIONS"
 echo "  Output: $OUTPUT_DIR"
 echo "=========================================================="
 
-$PYTHON -u training/self_play.py \
+$PYTHON -u -m training.self_play \
     --games "$GAMES_PER_WORKER" \
     --rollouts "$ROLLOUTS" \
     --determinizations "$DETERMINIZATIONS" \
