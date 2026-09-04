@@ -105,7 +105,9 @@ def run_self_play_game(
     # Outcome assignment
     for rec in bid_records:
         p = rec['player']
-        rec['outcome'] = float(game.get_reward(state, p))
+        reward_p = float(game.get_reward(state, p))
+        rec['outcome'] = reward_p
+        rec['won'] = 1.0 if reward_p > 0 else 0.0
 
     declarer_won = (state.reward > 0) if state.reward is not None else False
     return {

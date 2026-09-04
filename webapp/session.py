@@ -335,18 +335,22 @@ class GameSession:
 
         hand = self.state.hands[self.human_seat]
         bids = self.state.bids
-        ev_scores = bvn.predict_ev(hand=hand, bids=bids, device="cpu")
+        win_probs, ev_scores = bvn.predict(hand=hand, bids=bids, device="cpu")
+
+        best_win_bid = legal[int(np.argmax([win_probs[x] for x in legal]))]
 
         bids_analysis = []
         for b in legal:
             bids_analysis.append({
                 "contract_id": int(b),
                 "contract_name": Contract(b).name if b >= 0 else "PAS",
+                "win_prob": float(win_probs[b]),
+                "win_pct": round(float(win_probs[b]) * 100, 1),
                 "ev_score": float(ev_scores[b]),
-                "recommended": b == int(np.argmax([ev_scores[x] for x in legal])),
+                "recommended": b == best_win_bid,
             })
 
-        bids_analysis.sort(key=lambda x: x["ev_score"], reverse=True)
+        bids_analysis.sort(key=lambda x: x["win_prob"], reverse=True)
         return {"bids_analysis": bids_analysis}
 
     def get_ai_beliefs(self) -> Dict[str, Any]:

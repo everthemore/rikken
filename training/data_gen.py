@@ -139,7 +139,7 @@ def _pack_shard(records: List[dict], shard_path: str) -> None:
     Written atomically: data goes to a temp file first, then is renamed
     to the final path. This guarantees no partial/corrupt shards on disk.
     """
-    bvn_hands, bvn_bid_hist, bvn_bid_taken, bvn_outcome = [], [], [], []
+    bvn_hands, bvn_bid_hist, bvn_bid_taken, bvn_won, bvn_outcome = [], [], [], [], []
     bn_own, bn_played, bn_bid_hist, bn_trick, bn_void, bn_opp = [], [], [], [], [], []
 
     for rec in records:
@@ -147,6 +147,8 @@ def _pack_shard(records: List[dict], shard_path: str) -> None:
             bvn_hands.append(rec['hand'])
             bvn_bid_hist.append(rec['bid_history'].flatten())
             bvn_bid_taken.append(rec['bid_taken'])
+            won_val = float(rec.get('won', 1.0 if rec['outcome'] > 0 else 0.0))
+            bvn_won.append(won_val)
             bvn_outcome.append(rec['outcome'])
         elif rec.get('type') == 'play':
             bn_own.append(rec['own_hand'])
@@ -165,6 +167,7 @@ def _pack_shard(records: List[dict], shard_path: str) -> None:
             'bvn_hands':     np.array(bvn_hands,     dtype=np.int8),
             'bvn_bid_hist':  np.array(bvn_bid_hist,  dtype=np.int8),
             'bvn_bid_taken': np.array(bvn_bid_taken, dtype=np.int8),
+            'bvn_won':       np.array(bvn_won,       dtype=np.float32),
             'bvn_outcome':   np.array(bvn_outcome,   dtype=np.float32),
         })
     if bn_own:

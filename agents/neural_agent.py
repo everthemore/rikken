@@ -116,16 +116,25 @@ class NeuralAgent:
             if non_pass_legal:
                 return int(self.rng.choice(non_pass_legal))
 
-        q_scores = self.bvn.predict_ev(hand=hand, bids=bids, device=self.device)
+        win_probs, ev_scores = self.bvn.predict(hand=hand, bids=bids, device=self.device)
 
         # Mask illegal bids with -inf
-        masked_q = np.full(len(q_scores), -np.inf)
+        masked_win = np.full(len(win_probs), -np.inf)
         for b in legal:
-            masked_q[b] = q_scores[b]
+            masked_win[b] = win_probs[b]
 
-        # Pure parameter-free argmax Q(s, a):
-        best_bid = int(np.argmax(masked_q))
+        # Select legal contract with highest Win Probability:
+        best_bid = int(np.argmax(masked_win))
         return best_bid
+
+    def evaluate_bids(self, state: RikkenState) -> Tuple[np.ndarray, np.ndarray]:
+        """Returns (win_probabilities, expected_points) for all contracts."""
+        if self.bvn is None:
+            win_p = np.full(NUM_CONTRACTS, 0.5, dtype=np.float32)
+            ev = np.zeros(NUM_CONTRACTS, dtype=np.float32)
+            return win_p, ev
+        p = self.seat
+        return self.bvn.predict(state.hands[p], state.bids, device=self.device)
 
     def declare_trump(self, state: RikkenState) -> int:
         if state.contract == Contract.RIK_BETER:

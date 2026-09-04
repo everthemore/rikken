@@ -132,6 +132,7 @@ class StreamingShardDataset(IterableDataset):
                 bid_hist = data['bvn_bid_hist']
                 bid_taken = data['bvn_bid_taken']
                 outcome = data['bvn_outcome']
+                won = data['bvn_won'] if 'bvn_won' in data else (outcome > 0).astype(np.float32)
 
                 n = len(hands)
                 indices = np.arange(n)
@@ -151,6 +152,7 @@ class StreamingShardDataset(IterableDataset):
                         torch.from_numpy(hands[idx]).float(),
                         bh_t,
                         torch.tensor(bid_taken[idx], dtype=torch.long),
+                        torch.tensor(won[idx], dtype=torch.float32),
                         torch.tensor(outcome[idx], dtype=torch.float32),
                     )
 

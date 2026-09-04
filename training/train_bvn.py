@@ -21,7 +21,7 @@ import numpy as np
 import logging
 import time
 
-from networks.bvn import BVN, BVNLoss
+from networks.bvn import BVN, BVNDualLoss, NUM_CONTRACTS
 from training.dataset import build_dataset
 import config
 
@@ -59,7 +59,7 @@ def train(
     model = BVN().to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
-    criterion = BVNLoss()
+    criterion = BVNDualLoss()
 
     start_epoch = 1
     best_val_loss = float('inf')
@@ -91,15 +91,15 @@ def train(
         train_count = 0
         t0 = time.time()
 
-        for hands, bid_hist, bid_taken, outcome in train_loader:
-            hands, bid_hist, bid_taken, outcome = (
+        for hands, bid_hist, bid_taken, won, outcome in train_loader:
+            hands, bid_hist, bid_taken, won, outcome = (
                 hands.to(device), bid_hist.to(device),
-                bid_taken.to(device), outcome.to(device)
+                bid_taken.to(device), won.to(device), outcome.to(device)
             )
 
             optimizer.zero_grad()
-            logits, _ = model(hands, bid_hist)
-            loss = criterion(logits, bid_taken, outcome)
+            win_probs, ev_scores = model(hands, bid_hist)
+            loss, loss_win, loss_ev = criterion(win_probs, ev_scores, bid_taken, won, outcome)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
@@ -114,20 +114,20 @@ def train(
         model.eval()
         val_loss, correct, total = 0.0, 0, 0
         with torch.no_grad():
-            for hands, bid_hist, bid_taken, outcome in val_loader:
-                hands, bid_hist, bid_taken, outcome = (
+            for hands, bid_hist, bid_taken, won, outcome in val_loader:
+                hands, bid_hist, bid_taken, won, outcome = (
                     hands.to(device), bid_hist.to(device),
-                    bid_taken.to(device), outcome.to(device)
+                    bid_taken.to(device), won.to(device), outcome.to(device)
                 )
-                logits, _ = model(hands, bid_hist)
-                loss = criterion(logits, bid_taken, outcome)
+                win_probs, ev_scores = model(hands, bid_hist)
+                loss, loss_win, loss_ev = criterion(win_probs, ev_scores, bid_taken, won, outcome)
                 val_loss += loss.item() * len(hands)
 
-                taken_logit = logits.gather(1, bid_taken.unsqueeze(1)).squeeze(1)
-                preds = torch.sign(taken_logit)
-                target_sign = torch.sign(outcome)
-                correct += (preds == target_sign).sum().item()
-                total += len(outcome)
+                taken_win = win_probs.gather(1, bid_taken.unsqueeze(1)).squeeze(1)
+                preds = (taken_win >= 0.5)
+                target = (won >= 0.5)
+                correct += (preds == target).sum().item()
+                total += len(won)
 
         val_loss /= max(total, 1)
         val_acc   = correct / max(total, 1)
