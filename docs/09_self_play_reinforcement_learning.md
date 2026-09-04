@@ -1,61 +1,135 @@
-# 09. Self-Play Reinforcement Learning & Convergence Methodology
+# 09. Self-Play Reinforcement Learning & Evaluation Methodology
 
-This document details the multi-generation empirical trajectory, the 3,000-game benchmark evaluation, and the mathematical convergence analysis of the **constant-free Action-Value Q-Network ($Q \in [-1.0, +1.0]$)** trained on the Leiden University ALICE HPC cluster.
-
----
-
-## 1. Executive Benchmark Summary ($N = 3,000$ Games)
-
-| Metric | Heuristic Baseline | Neural Agent (Constant-Free Q-Network) | Strategic Superiority |
-|:---|:---:|:---:|:---|
-| **Overall Match Win Rate** | `19.1%` (545/2,854) | **`80.9%` (2,309 / 2,854)** ⭐ | **+61.8% Advantage** |
-| **When Defending (Defense)** | `11.8%` | **`88.2%` (2,096 / 2,377)** 🛡️ | **Dominant Defensive Punishing** |
-| **When Declaring (Offense)** | `11.8%` | **`44.7%` (213 / 477)** 👑 | **High Selective Discipline** |
-| **Troela Win Rate** | `69.9%` (123/176) | **`83.5%` (187 / 224)** 🏆 | **Cooperative 4th Ace Mastery** |
-| **Suicidal Solo Overbids (10–12 Alleen)** | **831 Overbids** | **0 Bids** 🧠 | **Complete Elimination of Overbidding** |
+This document details the AlphaZero-inspired **Expert Iteration (ExIt)** reinforcement learning loop, the **Dual-Head Bidding Value Network**, and the **True Individual (1-vs-3) Evaluation Tournament** for Dutch Rikken.
 
 ---
 
-## 2. 10-Generation ALICE Training Progression Log
+## 1. The Reinforcement Learning Framework (AlphaZero / ExIt)
 
-Below is the generational progression recorded across the 10 clean training iterations on ALICE:
+Rikken AI trains through pure self-play policy iteration with **zero external human data**:
 
-| Gen | Match Win Rate | Declarer Win Rate (Offense) | Defender Win Rate (Defense) | Training Dynamics & Meta-Evolution |
-|:---:|:---:|:---:|:---:|:---|
-| **1** | **`81.2%`** | `66.7%` | `84.0%` | Q-network rapidly masters defensive punishment against baseline overbids |
-| **2** | **`81.9%`** | **`85.7%`** | `81.2%` | Peak offensive equity: highly selective declaring (85.7% win rate) |
-| **3** | **`76.0%`** | `40.0%` | `82.7%` | Policy exploration on solo contract thresholds |
-| **4** | **`72.9%`** | `59.1%` | `77.0%` | Recovery and consolidation of partner contract valuation |
-| **5** | **`76.0%`** | `42.1%` | `84.4%` | High defense floor (>84%) maintained across cluster workers |
-| **6** | **`81.8%`** | `56.2%` | `86.8%` | Defense crosses 86%; Troela coordination solidified |
-| **7** | **`75.3%`** | `43.8%` | `81.5%` | Sustained equilibrium across all 14 contract types |
-| **8** | **`72.5%`** | `61.5%` | `74.1%` | Aggressive offensive testing |
-| **9** | **`78.6%`** | `47.1%` | `85.2%` | Strong defensive rebound (85.2%) |
-| **10** 🌟 | **`80.4%`** | `62.5%` | `84.0%` | **Converged Plateau**: 80.4% Overall, 84% Defense, 62.5% Offense |
+```
+              ┌──────────────────────────────────────────────────┐
+              │                                                  │
+              ▼                                                  │
+     [ Policy Improvement ]                                      │
+  4 Neural Agents play games via ISMCTS                          │
+  (MCTS lookahead search plays stronger                          │
+   than the raw neural network alone)                            │
+              │                                                  │
+              ▼                                                  │
+  Self-Play Experience Collection                                │
+  (States: hands, bid_history, voids -> Actions -> Match Reward) │
+              │                                                  │
+              ▼                                                  │
+     [ Policy Evaluation ]                                       │
+  Dual-Head BVN & Belief Network Retrained                       │
+  on rolling replay buffer (BUFFER_WINDOW = 5 generations)       │
+              │                                                  │
+              └──────────────────────────────────────────────────┘
+```
 
-### Convergence Dashboard
-![Convergence Dashboard](convergence.png)
-
----
-
-## 3. Large-Scale Contract Performance Breakdown ($N = 2,854$ Matches)
-
-| Contract | Neural Bids | Neural Win % | Opponent Bids | Opponent Win % | Strategic Takeaway |
-| :--- | :---: | :---: | :---: | :---: | :---|
-| **TROELA** | 224 | **`83.5%`** 👑 | 176 | `69.9%` | Exceptional synergy with the 4th Ace partner. |
-| **RIK** | 2 | **`100.0%`** ⭐ | 108 | `47.2%` | Maximum selective certainty on called Aces. |
-| **RIK BETER** | 3 | **`66.7%`** | 28 | `57.1%` | Strong performance with fixed Hearts trump. |
-| **ACHT ALLEEN** | 62 | **`25.8%`** | 292 | `3.1%` | **8x higher win rate** than baseline. |
-| **NEGEN ALLEEN** | 159 | `3.8%` | 870 | `7.5%` | Highly contested solo contract. |
-| **TIEN ALLEEN** | **0** | — | **272** | `1.1%` | Baseline committed 272 suicidal bids; AI defended with 98.9% success. |
-| **ELF / TWAALF** | **0** | — | **559** | `2.4%` | Baseline committed 559 suicidal bids; AI passed and punished. |
-| **MISÈRE** | 27 | `0.0%` | 57 | `1.8%` | Extreme 3v1 ducking contract; hard to win under optimal defense. |
+1. **Policy Improvement (Search)**:
+   During self-play, agents use **Information Set MCTS (ISMCTS)** with Belief Network card determinization and rollout lookahead. Lookahead search acts as a policy improvement operator that discovers better moves than the raw network.
+2. **Policy Evaluation (Deep Learning)**:
+   The neural networks distill the outcomes of those games into instant intuitions (evaluating private hands in milliseconds during bidding).
+3. **Rolling Replay Buffer (`BUFFER_WINDOW = 5`)**:
+   Retraining samples across a sliding window of the latest 5 generations (up to 75,000 games) to ensure smooth policy evolution without catastrophic forgetting or overfitting to a single iteration.
 
 ---
 
-## 4. Why Constant-Free Q-Values Succeeded
+## 2. The Dual-Head BVR Architecture: Solving the Expected Value Paradox
 
-1. **Dynamic Pass Valuation ($Q(s, 	ext{PAS}) pprox +0.997$)**:
-   - The network dynamically learned that when an opponent overbids a risky solo contract, passing provides an extraordinary $+0.997$ expected defensive reward.
-2. **Zero Hardcoded Parameters**:
-   - Action selection $\pi(s) = rg\max_{a \in 	ext{Legal}} Q_	heta(s, a)$ operates end-to-end without artificial thresholds or manual parameters.
+### 2.1 The Expected Value Trap in Card Games
+In standard Dutch Rikken scoring, stakes scale steeply with contract difficulty:
+* **RIK / RIK BETER**: $\pm 1$ pt per opponent (Net $\pm 1$ pt each)
+* **PIEK**: $\pm 2$ pts per opponent (Net $\pm 6$ pts solo)
+* **OPEN PIEK / MISÈRE**: $\pm 3$ pts per opponent (Net $\pm 9$ pts solo)
+
+Because payoffs are symmetric ($+S$ on win, $-S$ on loss), expected points scale with $S$:
+$$\mathbb{E}[\text{Points}] = S \times (2 P(\text{Win}) - 1)$$
+
+If an agent bids by maximizing **linear Expected Value ($\mathbb{E}[\text{Points}]$)**:
+* An **80% lock on RIK** yields: $1 \times (2 \times 0.80 - 1) = \mathbf{+0.60\text{ pts}}$
+* A **55% risky coin-flip on OPEN PIEK** yields: $9 \times (2 \times 0.55 - 1) = \mathbf{+0.90\text{ pts}}$
+
+The linear EV formula mathematically incentivized the agent to gamble on high-stake solo contracts (like OPEN PIEK) whenever win chance was slightly over 50%, completely refusing to bid safe contracts like RIK!
+
+### 2.2 The Dual-Head Solution
+To eliminate reckless gambling while preserving expected score analytics, the BVN features **two distinct heads**:
+
+1. **Win-Probability Head ($P_\theta(\text{Win} \mid s, a) \in [0.0, 1.0]$)**:
+   - Output: `Linear -> Sigmoid`
+   - Loss: Binary Cross-Entropy on whether the player won points ($y_{\text{won}} \in \{0.0, 1.0\}$)
+   - **Policy Action**: $\text{Bid} = \arg\max_{a \in \text{Legal}(s)} P_\theta(\text{Win} \mid s, a)$
+   - Result: The bot bids the contract with the **highest probability of winning** ($80\% \text{ RIK} > 55\% \text{ PIEK}$), naturally selecting natural human-like contracts.
+2. **Expected-Value Head ($\mathbb{E}_\theta[\text{Points} \mid s, a] \in [-1.0, +1.0]$)**:
+   - Output: `Linear -> Tanh`
+   - Loss: Huber regression on normalized game payoffs ($\div 10$)
+   - Used for the UI advice panel and strategic score evaluation.
+
+---
+
+## 3. Dealing, Position & Opening Lead Rules
+
+1. **Clockwise Dealer Rotation**:
+   The dealer rotates clockwise on each deal: `dealer = (dealer + 1) % 4`.
+2. **Voorhand Opening Lead**:
+   The player to the left of the dealer (`voorhand = (dealer + 1) % 4`) is **Voorhand**:
+   * Voorhand speaks first in the bidding auction.
+   * **Voorhand always leads Trick 1**, regardless of who declared the contract. (On subsequent tricks, the trick winner leads).
+
+---
+
+## 4. True Individual (1-vs-3) Evaluation Tournament
+
+In Rikken, **there are no fixed teams**. Unlike Bridge (where North/South and East/West are permanent partners), partnerships in Rikken are dynamic:
+* In `RIK`, the declarer calls an Ace (`vraagaas`). The holder of that Ace becomes their partner (*maatje*).
+* In `PIEK`, `MISÈRE`, and Solo contracts, it is 1 against 3.
+* In `OPEN PIEK` / `MISÈRE`, multiple players can join the contract simultaneously without being partners.
+
+### 4.1 The 1-vs-3 Tournament Structure (`training/tournament.py`)
+To prevent partnership contamination, the tournament pits:
+**1 Evaluated Agent vs 3 Opponents** across 400 games.
+
+### 4.2 16-Game Symmetric Block Rotation
+To ensure absolute mathematical fairness with zero seat or dealer bias:
+```python
+for g in range(n_games):
+    eval_seat = g % 4          # Rotates evaluated agent through seats 0, 1, 2, 3
+    dealer = (g // 4) % 4      # Cycles dealer through 0, 1, 2, 3
+    voorhand = (dealer + 1) % 4
+```
+In every 16 games:
+Every possible combination of `(eval_seat, dealer)` is played **exactly once**. Across 400 games, each position is tested 25 times.
+
+### 4.3 Granular Role Tracking
+Outcome is determined strictly by the evaluated seat's individual zero-sum payoff (`state.rewards[eval_seat] > 0`):
+* **Declarer Win Rate**: When the agent declared the contract.
+* **Partner (*Maatje*) Win Rate**: When an opponent declared and called the agent's Ace.
+* **Defender Win Rate**: When the agent was on defense.
+* **Simultaneous Piek/Misère**: Evaluated purely on the agent's own score, unaffected by whether the other declarer succeeded or failed.
+
+---
+
+## 5. Dual-Track Benchmarking (AlphaZero Gating)
+
+During GPU retraining on ALICE (`cluster/submit_retrain.slurm`), each generation undergoes two rigorous benchmark matches:
+
+1. **Track 1: vs Heuristic Baseline Anchor (400 Games)**:
+   - Evaluates 1 Neural vs 3 Rule-Based Heuristics.
+   - Provides an unmoving, stationary measuring stick across all generations.
+2. **Track 2: Head-to-Head vs Previous Generation Champion (200 Games)**:
+   - Evaluates 1 Candidate (`bvn_final.pt`, Gen $N$) vs 3 Champions (`bvn_gen_{N-1}.pt`, Gen $N-1$).
+   - Direct AlphaZero gating: verifies policy improvement ($> 50\%$) before model promotion.
+   - Logs `neural_vs_prev_win_rate` to `eval_history.json`.
+
+---
+
+## 6. Convergence Visualization (`analysis/plot_convergence.py`)
+
+The visualizer generates `docs/convergence.png` featuring 4 synchronized panels:
+1. **Win Rate vs Generation**: Displays the Baseline Anchor curve and Head-to-Head Prior Generation line against the 50% parity mark.
+2. **Win Rate by Role**: Separate trajectories for Declarer (Solo/Lead), Partner (*Maatje*), and Defender.
+3. **Average Tricks Won**: Tricks captured when declaring vs opponent baseline.
+4. **Contract Breakdown**: Granular win rates per contract type (Rik, Rik Beter, Piek, Misère, Troela).

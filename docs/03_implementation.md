@@ -29,12 +29,14 @@ class RikkenState:
     trump_suit: int             # Trump suit index (0..3) or -1
     declarer: int               # Seat of declarer
     partner: int                # Seat of partner (-1 for solo)
+    dealer: int                 # Seat of dealer (0..3), Voorhand is (dealer + 1) % 4
     vraagaas_suit: int          # Requested ace suit (-1 for solo)
     aasvragen_triggered: bool   # Aasvragen state
     partner_revealed: bool      # Public knowledge of partner identity
     void_matrix: np.ndarray     # (4, 4) bool: [player, suit] known voids
     trick_sequence: list        # Ordered history for clumping shuffle
     reward: Optional[float]     # Terminal binary reward (+1, -1, 0)
+    rewards: np.ndarray         # (4,) float32 individual payoff vector (-1.0 to +1.0)
 ```
 
 ---

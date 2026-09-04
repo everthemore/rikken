@@ -30,18 +30,33 @@ cd Rikken
 bash cluster/env_setup.sh
 ```
 
-### Step 2: Transfer Initial Model Checkpoints
-Copy your pre-trained Phase 2 checkpoints (`bvn_best.pt` and `bn_best.pt`) from your local machine to ALICE:
+### Step 2: Clean Slate & Launch Master Pipeline
+To train completely fresh with Phase 1 Foundation Pre-training and 5 self-play generations:
 ```bash
-# On your local laptop:
-scp checkpoints/bv* checkpoints/bn* <username>@login.alice.universiteitleiden.nl:/home/<username>/Rikken/checkpoints/
+# Clean previous runs if restarting
+rm -rf data/self_play/* data/stratified/* cluster/slurm_logs/* eval_history.json
+mkdir -p cluster/slurm_logs checkpoints data/self_play data/stratified
+
+# Launch pipeline with Phase 1 Stratified Pre-training + 5 Self-Play Iterations:
+bash cluster/run_pipeline.sh \
+    --with-foundation \
+    --iterations 5 \
+    --workers 150 \
+    --games-per-worker 100 \
+    --rollouts 100 \
+    --determinizations 15
 ```
 
-### Step 3: Launch the Master Pipeline
-To run 5 iterations of 25,000 self-play games each (125,000 total games) with a 5-generation rolling replay buffer:
-```bash
-bash cluster/run_pipeline.sh --iterations 5 --workers 50 --games-per-worker 500 --buffer-window 5
-```
+### Pipeline Execution Phases:
+1. **Phase 1: Stratified Contract Pre-training**:
+   - Dispatches 150 parallel workers generating balanced contract data across all 14 playable contracts.
+   - Assigns contract to the **best-fit hand** at the table (preventing impossible hands from polluting training).
+   - Simulates trick-taking with Voorhand opening the lead.
+   - Retrains Foundation Dual-Head BVN on GPU, creating `bvn_foundation.pt` and initializing `bvn_best.pt`.
+2. **Phase 2: Multi-Generation Self-Play Policy Iteration**:
+   - 150 CPU workers run parallel self-play with rotating dealers and unbuffered output.
+   - GPU worker retrains BVN and Belief Network across a rolling replay buffer (`BUFFER_WINDOW=5`).
+   - Runs **True Individual 1-vs-3 Tournament** (400 games vs Baseline + 200 games vs Prior Gen Champion).
 
 ---
 

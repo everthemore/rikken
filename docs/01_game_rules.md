@@ -5,9 +5,11 @@ Rikken is a traditional Dutch 4-player trick-taking card game played with a stan
 
 ---
 
-## 2. Dealing & Card Hierarchy
+## 2. Dealing, Dealer Rotation & Opening Lead
 - **Deck**: 52 cards, 4 suits (♣ Clubs, ♦ Diamonds, ♥ Hearts, ♠ Spades), 13 ranks each ($2 < 3 < \dots < 10 < 	ext{J} < 	ext{Q} < 	ext{K} < 	ext{A}$).
 - **Dealing**: 13 cards per player, dealt in two rounds: 6 cards each, then 7 cards each.
+- **Clockwise Dealer Rotation**: The dealer rotates clockwise each deal (`dealer = (dealer + 1) % 4`).
+- **Voorhand Opening Lead**: The player seated directly to the left of the dealer (`voorhand = (dealer + 1) % 4`) is **Voorhand**. Voorhand speaks first in the bidding auction and **always leads the opening card on Trick 1**, regardless of who declared the contract. (On tricks 2–13, the winner of the previous trick leads).
 - **Clumping Shuffle**: Real-world Rikken uses an imperfect riffle shuffle where previous tricks remain partially clumped, creating realistic non-uniform suit distributions.
 
 ---

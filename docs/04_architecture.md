@@ -28,22 +28,29 @@ The Rikken AI combines Neural Networks for intuition with Information Set Monte 
 
 ---
 
-## 1. Bidding Action-Value Q-Network (BVN) (`networks/bvn.py`)
+## 1. Dual-Head Bidding Value Network (BVN) (`networks/bvn.py`)
 
-- **Input Dimension**: 108 features
+- **Input Dimension**: 112 features
   - Own 13-card hand: `int8[52]` one-hot
-  - Bidding history: `float32[4, 14]` one-hot flattened (56 features for all 14 contracts: `PAS` through `TROELA`)
+  - Bidding history: `float32[4, 15]` one-hot flattened (60 features for all 15 contracts: `PAS` through `MOELA`)
 - **Architecture**:
-  - Linear Projection: $108 	o 128$
+  - Linear Projection: $112 \to 128$
   - Transformer Encoder: 3 layers, 4 attention heads, `d_model=128`, Pre-LN, GELU activations
-  - Value Head: $128 	o 64 	o 14$ with `nn.Tanh()` output activation
-  - Outputs continuous Expected Returns $Q_	heta(s, a) \in [-1.0, +1.0]$ across all 14 legal actions.
-- **Constant-Free Policy Execution**:
-  $$\pi(s) = rg\max_{a \in 	ext{Legal}(s)} Q_	heta(s, a)$$
-  Zero manual thresholds or heuristic parameters. The agent dynamically compares the expected value of declaring against the expected value of defending after passing.
-- **Loss Function**: Smooth L1 (Huber) regression ($eta = 0.1$) on signed zero-sum match rewards $R \in [-1.0, +1.0]$ derived from the official point schedule:
-  $$\mathcal{L}(	heta) = rac{1}{B} \sum_{i=1}^B 	ext{Huber}\left( Q_	heta(s_i, a_i) - R_i 
-ight)$$
+  - **Dual-Head Output**:
+    1. **Win-Probability Head**: $128 \to 64 \to 15$ with `nn.Sigmoid()` output activation:
+       $$P_\theta(\text{Win} \mid s, a) \in [0.0, 1.0]$$
+       Represents the probability of winning the contract given the player's hand and current auction state.
+    2. **Expected-Value (Points) Head**: $128 \to 64 \to 15$ with `nn.Tanh()` output activation:
+       $$\mathbb{E}_\theta[\text{Points} \mid s, a] \in [-1.0, +1.0]$$
+       Represents the normalized expected game score used for UI analytics and strategic point evaluation.
+- **Why Dual-Head Architecture Was Essential**:
+  Under pure Expected Value maximization, because solo contracts (like Piek/Misère) have $\pm 6$ to $\pm 9$ point stakes compared to $\pm 1$ for RIK, an agent with only a 55% win chance on OPEN PIEK achieves $+0.90$ expected points, dominating a safe 80% lock on RIK ($+0.60$ expected points). The agent was mathematically incentivized to gamble on big contracts.
+- **Argmax Win Probability Policy Execution**:
+  $$\pi(s) = \arg\max_{a \in \text{Legal}(s)} P_\theta(\text{Win} \mid s, a)$$
+  The agent bids the contract with the **highest probability of winning**, naturally favoring ~75–85% RIK bids over ~50–55% PIEK gambles on ordinary hands!
+- **Joint Loss Function**:
+  $$\mathcal{L}(\theta) = \mathcal{L}_{\text{BCE}}(P_\theta(s, a), y_{\text{won}}) + \mathcal{L}_{\text{Huber}}(\mathbb{E}_\theta(s, a), R)$$
+  where $y_{\text{won}} \in \{0.0, 1.0\}$ and $R \in [-1.0, +1.0]$ is the normalized zero-sum match payoff.
 
 ---
 
