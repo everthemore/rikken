@@ -82,7 +82,7 @@ if [ "$WITH_FOUNDATION" = true ]; then
     echo "[Phase 1] Scheduling GPU Foundation Training (afterok:$STRAT_JOB)..."
     FOUNDATION_JOB=$(sbatch \
         --parsable \
-        --dependency=afterok:${STRAT_JOB} \
+        --dependency=afterany:${STRAT_JOB} \
         --export=ALL,DATA_PATH="data/stratified",MODEL_PATH="checkpoints",EPOCHS=15,BATCH_SIZE=512 \
         cluster/submit_train_foundation.slurm)
 
@@ -110,7 +110,7 @@ for (( iter=START_ITER; iter<=END_ITER; iter++ )); do
     # Step 1: Submit Parallel Self-Play Array on ALICE CPU nodes
     EXTRA_DEP=""
     if [ -n "$PREV_RETRAIN_JOB" ]; then
-        EXTRA_DEP="--dependency=afterok:${PREV_RETRAIN_JOB}"
+        EXTRA_DEP="--dependency=afterany:${PREV_RETRAIN_JOB}"
         echo "[Gen $iter] Self-play queued (will start after Prior Job $PREV_RETRAIN_JOB completes)..."
     else
         echo "[Gen $iter] Submitting $WORKERS CPU workers ($TOTAL_GAMES_PER_ITER games)..."
@@ -130,7 +130,7 @@ for (( iter=START_ITER; iter<=END_ITER; iter++ )); do
     echo "[Gen $iter] Scheduling GPU Retraining on Replay Buffer (afterok:$SELF_PLAY_JOB)..."
     RETRAIN_JOB=$(sbatch \
         --parsable \
-        --dependency=afterok:${SELF_PLAY_JOB} \
+        --dependency=afterany:${SELF_PLAY_JOB} \
         --export=ALL,ITERATION=${iter},BUFFER_WINDOW=${BUFFER_WINDOW},EPOCHS=${RETRAIN_EPOCHS} \
         cluster/submit_retrain.slurm)
 
