@@ -12,6 +12,29 @@ Rikken is a traditional Dutch 4-player trick-taking card game played with a stan
 - **Voorhand Opening Lead**: The player seated directly to the left of the dealer (`voorhand = (dealer + 1) % 4`) is **Voorhand**. Voorhand speaks first in the bidding auction and **always leads the opening card on Trick 1**, regardless of who declared the contract. (On tricks 2–13, the winner of the previous trick leads).
 - **Clumping Shuffle**: Real-world Rikken uses an imperfect riffle shuffle where previous tricks remain partially clumped, creating realistic non-uniform suit distributions.
 
+<details>
+<summary><b>🔍 View Code Listing: Dealer Rotation & Voorhand Trick 1 Lead (engine/game.py)</b></summary>
+
+```python
+# In RikkenGame.reset():
+if dealer is not None:
+    self.current_dealer = dealer
+elif self.current_dealer is None:
+    self.current_dealer = 3  # Initial default: dealer 3 -> Voorhand 0
+else:
+    self.current_dealer = (self.current_dealer + 1) % 4
+
+state = RikkenState.initial(dealer=self.current_dealer)
+
+# In RikkenGame._resolve_bidding():
+s.phase = Phase.TRICK_TAKING
+voorhand = (s.dealer + 1) % 4
+s.current_player = voorhand
+s.trick_leader = voorhand  # Voorhand always leads Trick 1
+return s, None
+```
+</details>
+
 ---
 
 ## 3. The Bidding Ladder (15 Contracts)
@@ -50,6 +73,34 @@ In Piek, the contract is won if the declarer takes **either exactly 1 trick OR e
 ### 3.2 Simultaneous Co-Bidding (Multi-Player Misère & Piek)
 - When a player bids **`MISÈRE`**, **`PIEK`**, **`OPEN_MISÈRE`**, or **`OPEN_PIEK`**, other players can also bid the **exact same contract** without having to overbid.
 - Multiple declarers play simultaneously against the remaining defenders; each declarer's win/loss is scored independently.
+
+<details>
+<summary><b>🔍 View Code Listing: Multi-Player Declarer Mask & Zero-Sum Payoffs (engine/game.py)</b></summary>
+
+```python
+if Contract.is_multi_player_allowed(c):
+    decls = np.where(s.declarer_mask)[0]
+    defs = [p for p in range(4) if not s.declarer_mask[p]]
+    n_defs = len(defs)
+
+    for d in decls:
+        tw = s.tricks_won[d]
+        if c in (Contract.MISERE, Contract.OPEN_MISERE):
+            won = (tw == 0)
+        else:  # PIEK / OPEN_PIEK
+            won = (tw == 1 or tw == 5)
+
+        stake = unit_pt * n_defs
+        if won:
+            s.rewards[d] += stake
+            for df in defs:
+                s.rewards[df] -= unit_pt
+        else:
+            s.rewards[d] -= stake
+            for df in defs:
+                s.rewards[df] += unit_pt
+```
+</details>
 
 ---
 

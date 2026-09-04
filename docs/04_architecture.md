@@ -52,6 +52,65 @@ The Rikken AI combines Neural Networks for intuition with Information Set Monte 
   $$\mathcal{L}(\theta) = \mathcal{L}_{\text{BCE}}(P_\theta(s, a), y_{\text{won}}) + \mathcal{L}_{\text{Huber}}(\mathbb{E}_\theta(s, a), R)$$
   where $y_{\text{won}} \in \{0.0, 1.0\}$ and $R \in [-1.0, +1.0]$ is the normalized zero-sum match payoff.
 
+<details>
+<summary><b>🔍 View PyTorch Implementation: Dual-Head BVN Architecture & Forward Pass (networks/bvn.py)</b></summary>
+
+```python
+class BVN(nn.Module):
+    def __init__(self, num_contracts=15, d_model=128, nhead=4, num_layers=3, mlp_hidden=64):
+        super().__init__()
+        self.input_size = 52 + 4 * num_contracts  # 112 features
+        self.input_proj = nn.Linear(self.input_size, d_model)
+
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=d_model, nhead=nhead, dim_feedforward=d_model * 4,
+            dropout=0.1, activation='gelu', batch_first=True, norm_first=True,
+        )
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+
+        # Head 1: P(Win) in [0.0, 1.0] (Sigmoid)
+        self.win_head = nn.Sequential(
+            nn.Linear(d_model, mlp_hidden), nn.GELU(), nn.Dropout(0.1),
+            nn.Linear(mlp_hidden, num_contracts), nn.Sigmoid()
+        )
+
+        # Head 2: Expected Points in [-1.0, +1.0] (Tanh)
+        self.ev_head = nn.Sequential(
+            nn.Linear(d_model, mlp_hidden), nn.GELU(), nn.Dropout(0.1),
+            nn.Linear(mlp_hidden, num_contracts), nn.Tanh()
+        )
+
+    def forward(self, hands: torch.Tensor, bid_hist: torch.Tensor):
+        x = torch.cat([hands, bid_hist], dim=-1)
+        h = self.input_proj(x).unsqueeze(1)
+        h = self.transformer(h).squeeze(1)
+        return self.win_head(h), self.ev_head(h)
+```
+</details>
+
+<details>
+<summary><b>🔍 View Policy Implementation: Argmax Win Probability Bidding Action (agents/neural_agent.py)</b></summary>
+
+```python
+def _act_bid(self, state: RikkenState) -> int:
+    legal = legal_bids(state)
+    if not legal or legal == [int(Contract.PAS)]:
+        return int(Contract.PAS)
+
+    # Predict win probabilities across all contracts
+    win_probs, ev_scores = self.bvn.predict(hand=state.hands[self.seat], bids=state.bids, device=self.device)
+
+    # Mask illegal bids with -inf
+    masked_win = np.full(len(win_probs), -np.inf)
+    for b in legal:
+        masked_win[b] = win_probs[b]
+
+    # Select legal contract with highest Win Probability:
+    best_bid = int(np.argmax(masked_win))
+    return best_bid
+```
+</details>
+
 ---
 
 ## 2. Belief Network (BN) (`networks/bn.py`)

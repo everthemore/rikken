@@ -110,6 +110,47 @@ Outcome is determined strictly by the evaluated seat's individual zero-sum payof
 * **Defender Win Rate**: When the agent was on defense.
 * **Simultaneous Piek/Misère**: Evaluated purely on the agent's own score, unaffected by whether the other declarer succeeded or failed.
 
+<details>
+<summary><b>🔍 View Code Listing: 1-vs-3 Match Execution & Role Payoffs (training/tournament.py)</b></summary>
+
+```python
+def play_tournament_match(
+    eval_agent: NeuralAgent,
+    opp_agents: List[NeuralAgent | HeuristicAgent],
+    game: RikkenGame,
+    rng: np.random.Generator,
+    eval_seat: int = 0,
+    dealer: Optional[int] = None,
+) -> dict:
+    active_agents = [None] * 4
+    eval_agent.set_seat(eval_seat)
+    active_agents[eval_seat] = eval_agent
+
+    opp_seats = [s for s in range(4) if s != eval_seat]
+    for i, s in enumerate(opp_seats):
+        opp_agents[i].set_seat(s)
+        active_agents[s] = opp_agents[i]
+
+    state = game.reset(dealer=dealer)
+    # Bidding and Trick-taking simulation ...
+
+    eval_reward = float(state.rewards[eval_seat])
+    eval_won = (eval_reward > 0)
+    is_declarer = bool(state.declarer == eval_seat or state.declarer_mask[eval_seat])
+    is_partner = bool(state.partner == eval_seat)
+    is_defender = not is_declarer and not is_partner
+
+    return {
+        'contract': int(state.contract),
+        'is_declarer': is_declarer,
+        'is_partner': is_partner,
+        'is_defender': is_defender,
+        'eval_won': eval_won,
+        'eval_reward': eval_reward,
+    }
+```
+</details>
+
 ---
 
 ## 5. Dual-Track Benchmarking (AlphaZero Gating)
@@ -123,6 +164,35 @@ During GPU retraining on ALICE (`cluster/submit_retrain.slurm`), each generation
    - Evaluates 1 Candidate (`bvn_final.pt`, Gen $N$) vs 3 Champions (`bvn_gen_{N-1}.pt`, Gen $N-1$).
    - Direct AlphaZero gating: verifies policy improvement ($> 50\%$) before model promotion.
    - Logs `neural_vs_prev_win_rate` to `eval_history.json`.
+
+<details>
+<summary><b>🔍 View Code Listing: Dual Retraining & Head-to-Head Gating (cluster/submit_retrain.slurm)</b></summary>
+
+```bash
+# 1. Retrain Dual-Head BVN on Rolling Replay Buffer
+$PYTHON -u -m training.train_bvn \
+    --data-path "$REPLAY_PATHS" \
+    --epochs "$EPOCHS" \
+    --batch-size "$BATCH_SIZE" \
+    --resume-latest
+
+# 2. Retrain Belief Network on Rolling Replay Buffer
+$PYTHON -u -m training.train_bn \
+    --data-path "$REPLAY_PATHS" \
+    --epochs "$EPOCHS" \
+    --batch-size "$BATCH_SIZE" \
+    --resume-latest
+
+# 3. Dual-Track Benchmark Tournament
+# Track 1: vs Heuristic Baseline Anchor (400 games)
+metrics = run_tournament(n_games=400, bvn_path=eval_bvn, bn_path=eval_bn, opp_type='heuristic')
+
+# Track 2: Head-to-Head vs Prior Champion (200 games)
+if os.path.exists(prev_bvn):
+    h2h = run_tournament(n_games=200, bvn_path=eval_bvn, opp_type='neural', opp_bvn_path=prev_bvn)
+    vs_prev_wr = h2h['neural_win_rate']
+```
+</details>
 
 ---
 
