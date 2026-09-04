@@ -20,17 +20,19 @@ def run_pipeline():
             with open(history_file, "r") as f:
                 history = json.load(f)
             
-            print(f"{'Gen':<6} | {'Overall WR':<12} | {'Offense WR':<12} | {'Defense WR':<12} | {'Timestamp':<19}")
-            print("-" * 70)
+            print(f"{'Gen':<6} | {'vs Base':<9} | {'vs Prev':<9} | {'Declarer':<10} | {'Maatje':<9} | {'Defender':<10} | {'Timestamp':<19}")
+            print("-" * 85)
             for entry in history:
                 gen = f"Gen {entry.get('iteration', '?')}"
                 if entry.get('type') == 'baseline':
                     gen = "Baseline"
                 wr = f"{entry.get('neural_win_rate', 0)*100:.1f}%"
-                off = f"{entry.get('declarer_win_rate', 0)*100:.1f}%" if entry.get('declarer_win_rate') is not None else "-"
+                h2h = f"{entry.get('neural_vs_prev_win_rate', 0)*100:.1f}%" if entry.get('neural_vs_prev_win_rate') is not None else "-"
+                decl = f"{entry.get('declarer_win_rate', 0)*100:.1f}%" if entry.get('declarer_win_rate') is not None else "-"
+                part = f"{entry.get('partner_win_rate', 0)*100:.1f}%" if entry.get('partner_win_rate') is not None else "-"
                 defe = f"{entry.get('defender_win_rate', 0)*100:.1f}%" if entry.get('defender_win_rate') is not None else "-"
                 ts = entry.get('timestamp', '')
-                print(f"{gen:<6} | {wr:<12} | {off:<12} | {defe:<12} | {ts:<19}")
+                print(f"{gen:<6} | {wr:<9} | {h2h:<9} | {decl:<10} | {part:<9} | {defe:<10} | {ts:<19}")
         except Exception as e:
             print(f"Error loading eval_history.json: {e}")
     else:

@@ -116,14 +116,39 @@ eval_bn = 'checkpoints/bn_final.pt' if os.path.exists('checkpoints/bn_final.pt')
 
 tournament_games = int(os.environ.get('TOURNAMENT_GAMES', '400'))
 
+# 1. Evaluate vs Heuristic Baseline Anchor
+print(f"\n--- 3A. Evaluating Gen {iter_num} vs Heuristic Baseline ({tournament_games} games) ---")
 metrics = run_tournament(
     n_games=tournament_games,
     bvn_path=eval_bvn,
     bn_path=eval_bn,
+    opp_type='heuristic',
     rollouts=50,
     determinizations=10,
     seed=42 + iter_num * 1000
 )
+
+# 2. Evaluate vs Previous Generation Champion (Neural vs Neural gating)
+prev_bvn = f'checkpoints/bvn_gen_{iter_num - 1}.pt' if iter_num > 1 else 'checkpoints/bvn_foundation.pt'
+vs_prev_wr = None
+if os.path.exists(prev_bvn):
+    print(f"\n--- 3B. Evaluating Gen {iter_num} vs Prior Champion ({prev_bvn}) ---")
+    try:
+        h2h = run_tournament(
+            n_games=min(200, tournament_games),
+            bvn_path=eval_bvn,
+            bn_path=eval_bn,
+            opp_type='neural',
+            opp_bvn_path=prev_bvn,
+            opp_bn_path='checkpoints/bn_best.pt',
+            rollouts=50,
+            determinizations=10,
+            seed=10042 + iter_num * 1000
+        )
+        vs_prev_wr = h2h['neural_win_rate']
+        print(f"  → Head-to-Head Win Rate: {vs_prev_wr*100:.1f}%")
+    except Exception as e:
+        print(f"Could not run neural vs neural benchmark ({e})")
 
 # Archive and promote latest models to best for next iteration self-play
 if os.path.exists('checkpoints/bvn_final.pt'):
@@ -146,7 +171,9 @@ entry = {
     'iteration': iter_num,
     'type': f'generation_{iter_num}',
     'neural_win_rate': metrics['neural_win_rate'],
+    'neural_vs_prev_win_rate': vs_prev_wr,
     'declarer_win_rate': metrics['declarer_win_rate'],
+    'partner_win_rate': metrics.get('partner_win_rate'),
     'defender_win_rate': metrics['defender_win_rate'],
     'neural_avg_tricks_declared': metrics.get('neural_avg_tricks_declared'),
     'heuristic_avg_tricks_declared': metrics.get('heuristic_avg_tricks_declared'),
