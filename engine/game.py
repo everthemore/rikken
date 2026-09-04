@@ -45,10 +45,18 @@ class RikkenGame:
         self.rng = rng or np.random.default_rng()
         self._prev_trick_seq: Optional[list] = None
         self._prev_hands: Optional[np.ndarray] = None
+        self.current_dealer: Optional[int] = None
 
-    def reset(self, seed: Optional[int] = None) -> RikkenState:
+    def reset(self, seed: Optional[int] = None, dealer: Optional[int] = None) -> RikkenState:
         if seed is not None:
             self.rng = np.random.default_rng(seed)
+
+        if dealer is not None:
+            self.current_dealer = dealer
+        elif self.current_dealer is None:
+            self.current_dealer = 3  # Initial default: dealer 3 -> Voorhand 0
+        else:
+            self.current_dealer = (self.current_dealer + 1) % 4
 
         deck = clumping_shuffle(
             prev_trick_sequence=self._prev_trick_seq,
@@ -58,7 +66,7 @@ class RikkenGame:
         )
         hands = deal(deck)
 
-        state = RikkenState.initial()
+        state = RikkenState.initial(dealer=self.current_dealer)
         state.hands = hands
         return state
 
@@ -162,8 +170,9 @@ class RikkenGame:
             s.partner = find_moela_partner(s, s.declarer)
 
         s.phase = Phase.TRICK_TAKING
-        s.current_player = s.declarer
-        s.trick_leader = s.declarer
+        voorhand = (s.dealer + 1) % 4
+        s.current_player = voorhand
+        s.trick_leader = voorhand
         return s, None
 
     def declare(

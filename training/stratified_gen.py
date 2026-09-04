@@ -82,8 +82,9 @@ def setup_forced_declaration(
         s.vraagaas_suit = vraagaas_suit
 
     s.phase = Phase.TRICK_TAKING
-    s.current_player = declarer
-    s.trick_leader = declarer
+    voorhand = (s.dealer + 1) % 4
+    s.current_player = voorhand
+    s.trick_leader = voorhand
     return s
 
 

@@ -573,5 +573,88 @@ def test_moela_bidding_and_partner_assignment():
     assert state.phase == Phase.TRICK_TAKING
 
 
+# ---------------------------------------------------------------------------
+# Rotating Dealer and Voorhand Opening Lead
+# ---------------------------------------------------------------------------
+
+class TestDealerAndVoorhand:
+    def test_dealer_rotation_across_games(self):
+        game = RikkenGame()
+        # Game 1: default dealer 3 -> Voorhand 0
+        s1 = game.reset()
+        assert s1.dealer == 3
+        assert (s1.dealer + 1) % 4 == 0
+        assert s1.current_player == 0
+        assert s1.trick_leader == 0
+
+        # Game 2: dealer rotates to 0 -> Voorhand 1
+        s2 = game.reset()
+        assert s2.dealer == 0
+        assert (s2.dealer + 1) % 4 == 1
+        assert s2.current_player == 1
+        assert s2.trick_leader == 1
+
+        # Game 3: dealer rotates to 1 -> Voorhand 2
+        s3 = game.reset()
+        assert s3.dealer == 1
+        assert s3.current_player == 2
+
+        # Game 4: dealer rotates to 2 -> Voorhand 3
+        s4 = game.reset()
+        assert s4.dealer == 2
+        assert s4.current_player == 3
+
+        # Game 5: dealer wraps back to 3 -> Voorhand 0
+        s5 = game.reset()
+        assert s5.dealer == 3
+        assert s5.current_player == 0
+
+    def test_explicit_dealer_setting(self):
+        game = RikkenGame()
+        s = game.reset(dealer=2)
+        assert s.dealer == 2
+        assert s.current_player == 3
+        assert s.trick_leader == 3
+
+    def test_voorhand_leads_trick_1_when_other_player_declares(self):
+        """Even if Player 2 declares RIK, Voorhand (Player 0, when dealer is 3) must lead Trick 1."""
+        game = RikkenGame()
+        s = game.reset(dealer=3)  # Voorhand is 0
+        assert s.current_player == 0
+
+        # P0 passes, P1 passes, P2 bids RIK, P3 passes -> Bidding completes
+        s, _ = game.step(s, int(Contract.PAS))   # P0
+        s, _ = game.step(s, int(Contract.PAS))   # P1
+        s, _ = game.step(s, int(Contract.RIK))   # P2
+        s, _ = game.step(s, int(Contract.PAS))   # P3
+
+        assert s.phase == Phase.TRICK_TAKING
+        assert s.contract == Contract.RIK
+        assert s.declarer == 2
+        # Voorhand (0) must lead Trick 1, NOT the declarer (2)
+        assert s.trick_leader == 0
+        assert s.current_player == 0
+
+    def test_voorhand_leads_trick_1_with_rotated_dealer(self):
+        """When dealer is 1 (Voorhand is 2), Voorhand leads Trick 1 even if Player 0 declares."""
+        game = RikkenGame()
+        s = game.reset(dealer=1)  # Voorhand is 2
+        assert s.current_player == 2
+
+        # P2 passes, P3 passes, P0 bids PIEK, P1 passes -> Bidding completes
+        s, _ = game.step(s, int(Contract.PAS))   # P2
+        s, _ = game.step(s, int(Contract.PAS))   # P3
+        s, _ = game.step(s, int(Contract.PIEK))  # P0
+        s, _ = game.step(s, int(Contract.PAS))   # P1
+
+        assert s.phase == Phase.TRICK_TAKING
+        assert s.contract == Contract.PIEK
+        assert s.declarer == 0
+        # Voorhand (2) must lead Trick 1, NOT declarer (0)
+        assert s.trick_leader == 2
+        assert s.current_player == 2
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
+

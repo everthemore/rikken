@@ -152,6 +152,7 @@ class RikkenState:
     declarer: int               # Seat of the primary declaring player (-1 if not set)
     declarer_mask: np.ndarray = field(default_factory=lambda: np.zeros(4, dtype=bool)) # True for all active declarers (supports multi-player Misere/Piek)
     partner: int = -1           # Seat of partner (-1 for solo / multi-player contracts)
+    dealer: int = 3             # Seat of dealer (0..3). Voorhand is (dealer + 1) % 4
 
     # -------------------------------------------------------------------------
     # Rik / Troela specifics
@@ -180,15 +181,16 @@ class RikkenState:
     # Factory
     # -------------------------------------------------------------------------
     @classmethod
-    def initial(cls) -> 'RikkenState':
+    def initial(cls, dealer: int = 3) -> 'RikkenState':
         """Create a blank state before dealing. Use RikkenGame.reset() in practice."""
+        voorhand = (dealer + 1) % 4
         return cls(
             hands=np.zeros((4, 52), dtype=np.int8),
             played_cards=np.zeros(52, dtype=np.int8),
             current_trick=np.full(4, -1, dtype=np.int8),
             cards_face_up=np.zeros((4, 52), dtype=np.int8),
-            trick_leader=0,
-            current_player=0,
+            trick_leader=voorhand,
+            current_player=voorhand,
             trick_count=0,
             tricks_won=np.zeros(4, dtype=np.int8),
             phase=Phase.BIDDING,
@@ -202,6 +204,7 @@ class RikkenState:
             declarer=-1,
             declarer_mask=np.zeros(4, dtype=bool),
             partner=-1,
+            dealer=dealer,
             vraagaas_suit=-1,
             aasvragen_triggered=False,
             partner_revealed=False,
@@ -233,6 +236,7 @@ class RikkenState:
             declarer=self.declarer,
             declarer_mask=self.declarer_mask.copy(),
             partner=self.partner,
+            dealer=self.dealer,
             vraagaas_suit=self.vraagaas_suit,
             aasvragen_triggered=self.aasvragen_triggered,
             partner_revealed=self.partner_revealed,

@@ -273,6 +273,8 @@ class GameSession:
             "roles": roles,
             "current_player": int(self.state.current_player),
             "human_seat": int(self.human_seat),
+            "dealer": int(self.state.dealer),
+            "voorhand": int((self.state.dealer + 1) % 4),
             "is_human_turn": bool(self.state.current_player == self.human_seat and self.state.phase != Phase.TERMINAL),
             "needs_declaration": bool(needs_declaration),
             "contract": {
