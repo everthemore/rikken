@@ -32,6 +32,7 @@ def play_tournament_match(
     game: RikkenGame,
     rng: np.random.Generator,
     team_a_seats: tuple[int, int] = (0, 2),
+    dealer: Optional[int] = None,
 ) -> dict:
     """Play one tournament match between Neural (Team A) and Heuristic (Team B)."""
     active_agents = [None] * 4
@@ -47,7 +48,7 @@ def play_tournament_match(
         agent.set_seat(p)
         active_agents[p] = agent
 
-    state = game.reset()
+    state = game.reset(dealer=dealer)
 
     # Bidding
     while state.phase == Phase.BIDDING:
@@ -97,7 +98,7 @@ def play_tournament_match(
 
 
 def run_tournament(
-    n_games: int = 100,
+    n_games: int = 400,
     bvn_path: str = 'checkpoints/bvn_best.pt',
     bn_path: str = 'checkpoints/bn_best.pt',
     rollouts: int = 50,
@@ -153,8 +154,10 @@ def run_tournament(
     t0 = time.time()
 
     for g in range(n_games):
-        team_a_seats = (0, 2) if (g % 2 == 0) else (1, 3)
-        res = play_tournament_match(neural_agents, heuristic_agents, game, rng, team_a_seats)
+        # 8-game symmetric blocks: perfectly balances seat and dealer combinations
+        team_a_seats = (0, 2) if ((g // 4) % 2 == 0) else (1, 3)
+        dealer = g % 4
+        res = play_tournament_match(neural_agents, heuristic_agents, game, rng, team_a_seats, dealer=dealer)
 
         if res['redeal']:
             redeals += 1

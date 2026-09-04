@@ -114,8 +114,10 @@ import shutil
 eval_bvn = 'checkpoints/bvn_final.pt' if os.path.exists('checkpoints/bvn_final.pt') else 'checkpoints/bvn_best.pt'
 eval_bn = 'checkpoints/bn_final.pt' if os.path.exists('checkpoints/bn_final.pt') else 'checkpoints/bn_best.pt'
 
+tournament_games = int(os.environ.get('TOURNAMENT_GAMES', '400'))
+
 metrics = run_tournament(
-    n_games=100,
+    n_games=tournament_games,
     bvn_path=eval_bvn,
     bn_path=eval_bn,
     rollouts=50,
@@ -149,7 +151,7 @@ entry = {
     'neural_avg_tricks_declared': metrics.get('neural_avg_tricks_declared'),
     'heuristic_avg_tricks_declared': metrics.get('heuristic_avg_tricks_declared'),
     'contract_breakdown': metrics.get('contract_breakdown', {}),
-    'total_games': metrics.get('total_games', 100),
+    'total_games': metrics.get('total_games', tournament_games),
     'redeals': metrics.get('redeals', 0),
     'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
 }
