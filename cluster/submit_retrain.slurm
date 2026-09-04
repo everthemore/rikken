@@ -108,14 +108,28 @@ import numpy as np
 from training.tournament import run_tournament
 
 iter_num = int(os.environ.get('ITERATION', '1'))
+import shutil
+
+# Evaluate newly retrained generation models
+eval_bvn = 'checkpoints/bvn_final.pt' if os.path.exists('checkpoints/bvn_final.pt') else 'checkpoints/bvn_best.pt'
+eval_bn = 'checkpoints/bn_final.pt' if os.path.exists('checkpoints/bn_final.pt') else 'checkpoints/bn_best.pt'
+
 metrics = run_tournament(
     n_games=100,
-    bvn_path='checkpoints/bvn_best.pt',
-    bn_path='checkpoints/bn_best.pt',
+    bvn_path=eval_bvn,
+    bn_path=eval_bn,
     rollouts=50,
     determinizations=10,
     seed=42 + iter_num * 1000
 )
+
+# Archive and promote latest models to best for next iteration self-play
+if os.path.exists('checkpoints/bvn_final.pt'):
+    shutil.copy('checkpoints/bvn_final.pt', f'checkpoints/bvn_gen_{iter_num}.pt')
+    shutil.copy('checkpoints/bvn_final.pt', 'checkpoints/bvn_best.pt')
+if os.path.exists('checkpoints/bn_final.pt'):
+    shutil.copy('checkpoints/bn_final.pt', f'checkpoints/bn_gen_{iter_num}.pt')
+    shutil.copy('checkpoints/bn_final.pt', 'checkpoints/bn_best.pt')
 
 history_file = 'eval_history.json'
 history = []

@@ -74,15 +74,13 @@ def train(
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             if 'scheduler_state_dict' in checkpoint and checkpoint['scheduler_state_dict']:
                 scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-            start_epoch = checkpoint.get('epoch', 0) + 1
-            best_val_loss = checkpoint.get('best_val_loss', float('inf'))
-            history = checkpoint.get('history', history)
-            log.info(f"Resumed complete state from {resume} (starting at epoch {start_epoch})")
+            best_val_loss = float('inf')  # Fresh best tracking for this generation
+            log.info(f"Resumed model weights and optimizer state from {resume}")
         else:
             model.load_state_dict(checkpoint)
             log.info(f"Loaded model weights only from {resume}")
 
-    for epoch in range(start_epoch, epochs + 1):
+    for epoch in range(1, epochs + 1):
         model.train()
         train_loss = 0.0
         train_count = 0
