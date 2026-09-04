@@ -21,7 +21,7 @@ from typing import Optional, List, Dict
 
 from engine.state import RikkenState, Contract, Phase
 from engine.game import RikkenGame
-from engine.card import ACE_RANK, HEARTS_SUIT, card_id
+from engine.card import ACE_RANK, HEARTS_SUIT, card_id, rank_of
 from agents.neural_agent import NeuralAgent
 from agents.heuristic import HeuristicAgent
 from training.data_gen import _pack_shard
@@ -128,13 +128,31 @@ def run_stratified_game(
                 best_p = p
         declarer = best_p
     elif target_contract in (Contract.MISERE, Contract.OPEN_MISERE):
-        # Pick player with lowest cards / fewest honors
+        # Pick player with lowest cards / fewest honors (ideal: 0 honors)
         honor_counts = [int(np.sum(state.hands[p][9::13]) + np.sum(state.hands[p][10::13]) + np.sum(state.hands[p][11::13]) + np.sum(state.hands[p][12::13])) for p in range(4)]
         declarer = int(np.argmin(honor_counts))
     elif target_contract in (Contract.PIEK, Contract.OPEN_PIEK):
-        # Pick player with most high honors
-        honor_counts = [int(np.sum(state.hands[p][9::13]) + np.sum(state.hands[p][10::13]) + np.sum(state.hands[p][11::13]) + np.sum(state.hands[p][12::13])) for p in range(4)]
-        declarer = int(np.argmax(honor_counts))
+        # A legitimate Piek hand requires exactly 1 high honor (Ace/King) and minimal middle cards.
+        # Hands with multiple honors will fail Piek (winning > 1 trick).
+        def piek_score(h: np.ndarray) -> float:
+            hh = sum(1 for c in np.where(h)[0] if rank_of(c) >= 10) # Q, K, A
+            mc = sum(1 for c in np.where(h)[0] if 6 <= rank_of(c) < 10) # 8, 9, J
+            # Heavily penalize having 0 or >1 high honors
+            return -abs(hh - 1) * 5.0 - mc * 1.5
+
+        # Search up to 25 redeals for a realistic Piek candidate
+        best_p, best_score = 0, -float('inf')
+        for _ in range(25):
+            scores = [piek_score(state.hands[p]) for p in range(4)]
+            cand_p = int(np.argmax(scores))
+            if scores[cand_p] > best_score:
+                best_score = scores[cand_p]
+                best_p = cand_p
+            # If we found a clean Piek hand (1 honor, <= 1 middle card), lock it in
+            if scores[cand_p] >= -1.5:
+                break
+            state = game.reset()
+        declarer = best_p
     else:
         declarer = int(rng.integers(0, 4))
 
