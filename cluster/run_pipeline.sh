@@ -10,7 +10,8 @@
 #   bash cluster/run_pipeline.sh [options]
 #
 # Options:
-#   --with-foundation       Run Phase 1 Stratified Pre-training before self-play (default: false)
+# Options:
+#   --warm-start-heuristic  Run Phase 1 Heuristic Imitation Pre-training before self-play (default: false)
 #   --iterations N          Number of RL iterations (default: 5)
 #   --workers N             Parallel SLURM tasks in array (default: 50)
 #   --games-per-worker N    Games per worker per iteration (default: 100)
@@ -23,7 +24,7 @@
 
 set -e
 
-WITH_FOUNDATION=false
+WARM_START_HEURISTIC=false
 ITERATIONS=5
 WORKERS=50
 GAMES_PER_WORKER=100
@@ -34,14 +35,15 @@ RETRAIN_EPOCHS=10
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --with-foundation)     WITH_FOUNDATION=true; shift 1 ;;
-        --iterations)          ITERATIONS="$2"; shift 2 ;;
-        --workers)             WORKERS="$2"; shift 2 ;;
-        --games-per-worker)    GAMES_PER_WORKER="$2"; shift 2 ;;
-        --rollouts)            ROLLOUTS="$2"; shift 2 ;;
-        --determinizations)    DETERMINIZATIONS="$2"; shift 2 ;;
-        --buffer-window)       BUFFER_WINDOW="$2"; shift 2 ;;
-        --retrain-epochs)      RETRAIN_EPOCHS="$2"; shift 2 ;;
+        --warm-start-heuristic) WARM_START_HEURISTIC=true; shift 1 ;;
+        --with-foundation)      WARM_START_HEURISTIC=true; shift 1 ;; # Alias for backward compatibility
+        --iterations)           ITERATIONS="$2"; shift 2 ;;
+        --workers)              WORKERS="$2"; shift 2 ;;
+        --games-per-worker)     GAMES_PER_WORKER="$2"; shift 2 ;;
+        --rollouts)             ROLLOUTS="$2"; shift 2 ;;
+        --determinizations)     DETERMINIZATIONS="$2"; shift 2 ;;
+        --buffer-window)        BUFFER_WINDOW="$2"; shift 2 ;;
+        --retrain-epochs)       RETRAIN_EPOCHS="$2"; shift 2 ;;
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
@@ -49,11 +51,11 @@ done
 TOTAL_GAMES_PER_ITER=$(( WORKERS * GAMES_PER_WORKER ))
 ARRAY_MAX=$(( WORKERS - 1 ))
 
-mkdir -p cluster/slurm_logs checkpoints data/self_play data/stratified
+mkdir -p cluster/slurm_logs checkpoints data/self_play data/imitation
 
 echo "=========================================================="
 echo "  Rikken AI — Leiden ALICE Master RL Pipeline"
-echo "  With Foundation Pre-training: $WITH_FOUNDATION"
+echo "  Heuristic Imitation Warm-Start: $WARM_START_HEURISTIC"
 echo "  Iterations: $ITERATIONS | Workers: $WORKERS ($TOTAL_GAMES_PER_ITER games/iter)"
 echo "  MCTS Rollouts: $ROLLOUTS | Det: $DETERMINIZATIONS | Buffer Window: $BUFFER_WINDOW"
 echo "=========================================================="
@@ -61,34 +63,23 @@ echo "=========================================================="
 PREV_RETRAIN_JOB=""
 
 # ---------------------------------------------------------------------------
-# Optional Phase 1: Stratified Contract Valuation Pre-training
+# Optional Phase 1: Heuristic Imitation Learning (Warm-Start)
 # ---------------------------------------------------------------------------
-if [ "$WITH_FOUNDATION" = true ]; then
+if [ "$WARM_START_HEURISTIC" = true ]; then
     echo ""
     echo "##########################################################"
-    echo "  PHASE 1: STRATIFIED CONTRACT PRE-TRAINING"
+    echo "  PHASE 1: HEURISTIC IMITATION LEARNING & WARM-START"
     echo "##########################################################"
 
-    echo "[Phase 1] Submitting $WORKERS workers for Stratified Data Generation..."
-    STRAT_JOB=$(sbatch \
+    echo "[Phase 1] Submitting GPU Heuristic Imitation Job on ALICE..."
+    IMITATION_JOB=$(sbatch \
         --parsable \
-        --array=0-${ARRAY_MAX} \
-        --export=ALL,GAMES_PER_CONTRACT=10,ROLLOUTS=${ROLLOUTS},DETERMINIZATIONS=${DETERMINIZATIONS},OUTPUT_DIR="data/stratified" \
-        cluster/submit_stratified.slurm)
+        --export=ALL,DEALS=25000,PLAY_GAMES=2500,EPOCHS=10,BATCH_SIZE=512,MODEL_PATH="checkpoints" \
+        cluster/submit_imitation.slurm)
 
-    STRAT_JOB=$(echo "$STRAT_JOB" | cut -d';' -f1)
-    echo "  -> Stratified Generator Array Job ID: $STRAT_JOB"
-
-    echo "[Phase 1] Scheduling GPU Foundation Training (afterok:$STRAT_JOB)..."
-    FOUNDATION_JOB=$(sbatch \
-        --parsable \
-        --dependency=afterany:${STRAT_JOB} \
-        --export=ALL,DATA_PATH="data/stratified",MODEL_PATH="checkpoints",EPOCHS=15,BATCH_SIZE=512 \
-        cluster/submit_train_foundation.slurm)
-
-    FOUNDATION_JOB=$(echo "$FOUNDATION_JOB" | cut -d';' -f1)
-    echo "  -> Foundation Training Job ID: $FOUNDATION_JOB"
-    PREV_RETRAIN_JOB="$FOUNDATION_JOB"
+    IMITATION_JOB=$(echo "$IMITATION_JOB" | cut -d';' -f1)
+    echo "  -> Heuristic Imitation Job ID: $IMITATION_JOB"
+    PREV_RETRAIN_JOB="$IMITATION_JOB"
 fi
 
 # ---------------------------------------------------------------------------
