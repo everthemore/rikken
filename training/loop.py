@@ -123,8 +123,10 @@ def run_self_play_loop(
             for k in range(window_start, iter_num + 1)
             if os.path.exists(os.path.join(output_base, f"iter_{k}"))
         ]
+        if os.path.exists("data/imitation"):
+            replay_dirs.append("data/imitation")
         replay_data_paths = ",".join(replay_dirs)
-        print(f"\n[Iter {iter_num}] Replay Buffer: aggregating {len(replay_dirs)} iterations (iters {window_start}..{iter_num})")
+        print(f"\n[Iter {iter_num}] Replay Buffer: aggregating {len(replay_dirs)} sources (iters {window_start}..{iter_num})")
 
         print(f"[Iter {iter_num}] Retraining BVN on Rolling Buffer ({retrain_epochs} epochs)...")
         train_bvn(
@@ -141,6 +143,15 @@ def run_self_play_loop(
             model_path=model_path,
             resume_latest=True,
         )
+
+        # Archive generation checkpoints
+        import shutil
+        bvn_final = os.path.join(model_path, 'bvn_final.pt')
+        bn_final = os.path.join(model_path, 'bn_final.pt')
+        if os.path.exists(bvn_final):
+            shutil.copy(bvn_final, os.path.join(model_path, f'bvn_gen_{iter_num}.pt'))
+        if os.path.exists(bn_final):
+            shutil.copy(bn_final, os.path.join(model_path, f'bn_gen_{iter_num}.pt'))
 
         # Step 3: Tournament Evaluation vs Baseline
         print(f"\n[Iter {iter_num}] Evaluating Generation {iter_num} in Tournament...")

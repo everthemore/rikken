@@ -75,6 +75,11 @@ if [ -z "$REPLAY_PATHS" ]; then
     REPLAY_PATHS="data/self_play/iter_${ITERATION}"
 fi
 
+# Mix in Phase 1 imitation dataset as a regularizing anchor to prevent contract probability drift
+if [ -d "data/imitation" ]; then
+    REPLAY_PATHS="$REPLAY_PATHS,data/imitation"
+fi
+
 echo "=========================================================="
 echo "  Rikken AI — ALICE HPC GPU Retraining"
 echo "  Job ID: $SLURM_JOB_ID | Host: $(hostname) | Partition: $SLURM_JOB_PARTITION"
@@ -150,13 +155,30 @@ if os.path.exists(prev_bvn):
     except Exception as e:
         print(f"Could not run neural vs neural benchmark ({e})")
 
-# Archive and promote latest models to best for next iteration self-play
+# Archive every generation model checkpoint
 if os.path.exists('checkpoints/bvn_final.pt'):
     shutil.copy('checkpoints/bvn_final.pt', f'checkpoints/bvn_gen_{iter_num}.pt')
-    shutil.copy('checkpoints/bvn_final.pt', 'checkpoints/bvn_best.pt')
 if os.path.exists('checkpoints/bn_final.pt'):
     shutil.copy('checkpoints/bn_final.pt', f'checkpoints/bn_gen_{iter_num}.pt')
-    shutil.copy('checkpoints/bn_final.pt', 'checkpoints/bn_best.pt')
+
+# AlphaZero Promotion Gating: Candidate must win >= 50% vs prior champion
+GATE_THRESHOLD = 0.50
+promoted = False
+if iter_num == 1 or vs_prev_wr is None:
+    # First generation or missing prior champion -> promote to establish initial best
+    promoted = True
+    print(f"  ★ Initial Generation {iter_num} established as champion (bvn_best.pt / bn_best.pt)")
+elif vs_prev_wr >= GATE_THRESHOLD:
+    promoted = True
+    print(f"  ★ Generation {iter_num} PASSED promotion gate ({vs_prev_wr*100:.1f}% >= {GATE_THRESHOLD*100:.1f}%) -> Promoted to bvn_best.pt / bn_best.pt")
+else:
+    print(f"  ✗ Generation {iter_num} FAILED promotion gate ({vs_prev_wr*100:.1f}% < {GATE_THRESHOLD*100:.1f}%) -> Retaining prior champion for self-play")
+
+if promoted:
+    if os.path.exists('checkpoints/bvn_final.pt'):
+        shutil.copy('checkpoints/bvn_final.pt', 'checkpoints/bvn_best.pt')
+    if os.path.exists('checkpoints/bn_final.pt'):
+        shutil.copy('checkpoints/bn_final.pt', 'checkpoints/bn_best.pt')
 
 history_file = 'eval_history.json'
 history = []
@@ -172,6 +194,7 @@ entry = {
     'type': f'generation_{iter_num}',
     'neural_win_rate': metrics['neural_win_rate'],
     'neural_vs_prev_win_rate': vs_prev_wr,
+    'promoted': promoted,
     'declarer_win_rate': metrics['declarer_win_rate'],
     'partner_win_rate': metrics.get('partner_win_rate'),
     'defender_win_rate': metrics['defender_win_rate'],

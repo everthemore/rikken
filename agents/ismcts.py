@@ -25,6 +25,7 @@ from collections import defaultdict
 from engine.state import RikkenState, Phase
 from engine.game import RikkenGame
 from engine.rules import legal_plays, legal_bids
+from agents.heuristic import HeuristicAgent
 import config
 
 
@@ -114,6 +115,7 @@ class ISMCTSAgent:
         self.c = exploration_c
         self.bn = belief_network
         self.rng = rng or np.random.default_rng()
+        self._heuristic_agents = [HeuristicAgent(seat=p, rng=self.rng) for p in range(4)]
 
     def set_seat(self, seat: int) -> None:
         self.seat = seat
@@ -312,15 +314,18 @@ class ISMCTSAgent:
 
     def _rollout(self, state: RikkenState) -> float:
         """
-        Random rollout from `state` to terminal.
-
-        Phase 1: uniform random play.
-        Phase 3: replace with BVN/BN-guided policy.
+        Domain-aware heuristic rollout from `state` to terminal.
+        Ducks in Misere, follows 1-trick / 5-trick strategy in Piek,
+        and draws trumps / plays side aces in normal contracts.
         """
         s = state.copy()
         while not self.game.is_terminal(s):
-            legal = self._get_legal_list(s)
-            action = int(self.rng.choice(legal))
+            p = s.current_player
+            if s.phase == Phase.TRICK_TAKING:
+                action = self._heuristic_agents[p]._play(s)
+            else:
+                legal = self._get_legal_list(s)
+                action = int(self.rng.choice(legal))
             s, reward = self.game.step(s, action)
             if reward is not None:
                 return self.game.get_reward(s, self.seat)

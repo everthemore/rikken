@@ -118,13 +118,45 @@ class NeuralAgent:
 
         win_probs, ev_scores = self.bvn.predict(hand=hand, bids=bids, device=self.device)
 
-        # Mask illegal bids with -inf
-        masked_win = np.full(len(win_probs), -np.inf)
-        for b in legal:
-            masked_win[b] = win_probs[b]
+        pas_win = float(win_probs[int(Contract.PAS)])
+        best_bid = int(Contract.PAS)
+        best_score = -np.inf
 
-        # Select legal contract with highest Win Probability:
-        best_bid = int(np.argmax(masked_win))
+        for b in legal:
+            if b == int(Contract.PAS):
+                continue
+            c = Contract(b)
+
+            # Tier-based confidence margins & minimum probability requirements:
+            if Contract.is_open(c):
+                # Open contracts (Open Piek, Open Misere): high exposure / risk
+                req_margin = 0.20
+                min_prob = 0.70
+                min_ev = 0.15
+            elif Contract.is_solo(c):
+                # Solo contracts (Acht Alleen..Solo Slim, Misere, Piek): 1 vs 3
+                req_margin = 0.10
+                min_prob = 0.58
+                min_ev = 0.05
+            else:
+                # Partner contracts (Rik, Rik Beter, Troela, Moela): cooperative
+                req_margin = 0.03
+                min_prob = 0.50
+                min_ev = -0.05
+
+            wp = float(win_probs[b])
+            ev = float(ev_scores[b])
+
+            if (wp >= pas_win + req_margin) and (wp >= min_prob) and (ev >= min_ev):
+                # Rank qualified contracts primarily by EV with win probability tie-breaker
+                score = ev + 0.1 * wp
+                if score > best_score:
+                    best_score = score
+                    best_bid = b
+
+        if best_bid not in legal:
+            best_bid = max(legal, key=lambda b: win_probs[b])
+
         return best_bid
 
     def evaluate_bids(self, state: RikkenState) -> Tuple[np.ndarray, np.ndarray]:
