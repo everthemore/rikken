@@ -141,14 +141,17 @@ def generate_heuristic_cardplay_data(
     num_games: int = 2500,
     output_dir: str = "data/imitation",
 ) -> str:
-    """Generates natural heuristic games for Belief Network pre-training."""
+    """Generates natural heuristic games for both BVN replay anchor and Belief Network pre-training."""
     os.makedirs(output_dir, exist_ok=True)
-    log.info(f"Generating {num_games:,} natural heuristic card-play games for Belief Network...")
+    log.info(f"Generating {num_games:,} natural heuristic card-play games...")
     t0 = time.time()
 
     all_records = []
     for seed in range(num_games):
         res = run_one_game(seed)
+        for rec in res.get("bid_records", []):
+            rec["type"] = "bid"
+            all_records.append(rec)
         for rec in res.get("play_records", []):
             rec["type"] = "play"
             all_records.append(rec)
@@ -156,7 +159,7 @@ def generate_heuristic_cardplay_data(
     shard_path = os.path.join(output_dir, "heuristic_play_shard.npz")
     _pack_shard(all_records, shard_path)
     dt = time.time() - t0
-    log.info(f"Saved {len(all_records):,} card-play records to {shard_path} in {dt:.1f}s")
+    log.info(f"Saved {len(all_records):,} bid and play records to {shard_path} in {dt:.1f}s")
     return output_dir
 
 

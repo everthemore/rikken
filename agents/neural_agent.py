@@ -127,27 +127,31 @@ class NeuralAgent:
                 continue
             c = Contract(b)
 
+            wp = float(win_probs[b])
+            ev = float(ev_scores[b])
+
             # Tier-based confidence margins & minimum probability requirements:
             if Contract.is_open(c):
                 # Open contracts (Open Piek, Open Misere): high exposure / risk
                 req_margin = 0.20
                 min_prob = 0.70
                 min_ev = 0.15
+                qualified = (wp >= pas_win + req_margin) and (wp >= min_prob) and (ev >= min_ev)
             elif Contract.is_solo(c):
                 # Solo contracts (Acht Alleen..Solo Slim, Misere, Piek): 1 vs 3
                 req_margin = 0.10
                 min_prob = 0.58
                 min_ev = 0.05
+                qualified = (wp >= pas_win + req_margin) and (wp >= min_prob) and (ev >= min_ev)
             else:
-                # Partner contracts (Rik, Rik Beter, Troela, Moela): cooperative
-                req_margin = 0.03
+                # Partner contracts (Rik, Rik Beter, Troela, Moela): cooperative 2 vs 2
+                # A player declares Rik when the hand has a genuine winning expectation (wp >= 0.50 and ev >= -0.05).
+                # Does NOT require beating the passive defender win rate of passing (which can be >70% against overbidding bots).
                 min_prob = 0.50
                 min_ev = -0.05
+                qualified = (wp >= min_prob) and (ev >= min_ev)
 
-            wp = float(win_probs[b])
-            ev = float(ev_scores[b])
-
-            if (wp >= pas_win + req_margin) and (wp >= min_prob) and (ev >= min_ev):
+            if qualified:
                 # Rank qualified contracts primarily by EV with win probability tie-breaker
                 score = ev + 0.1 * wp
                 if score > best_score:
