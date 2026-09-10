@@ -131,15 +131,14 @@ class NeuralAgent:
             ev = float(ev_scores[b])
 
             # Tier-based confidence margins & minimum probability requirements:
-            if Contract.is_open(c):
-                # Open contracts (Open Piek, Open Misere): high exposure / risk
+            if Contract.is_open(c) or c in (Contract.MISERE, Contract.OPEN_MISERE):
+                # Open contracts & Misère (exact 0 tricks): zero tolerance for slips
                 min_prob = 0.70
-                min_ev = 0.20
+                min_ev = 0.15
                 qualified = (wp >= min_prob) and (ev >= min_ev)
             elif Contract.is_solo(c):
-                # Solo contracts (Acht Alleen..Solo Slim, Misere, Piek): 1 vs 3
-                # Does not require beating passive defender win rate (which can exceed 70%),
-                # but requires a solid winning probability (>=52%) and non-negative expected score.
+                # Solo trump contracts (Acht Alleen..Solo Slim) & Piek: 1 vs 3
+                # Requires solid winning probability (>=52%) and non-negative expected score.
                 min_prob = 0.52
                 min_ev = 0.00
                 qualified = (wp >= min_prob) and (ev >= min_ev)
@@ -151,8 +150,9 @@ class NeuralAgent:
                 qualified = (wp >= min_prob) and (ev >= min_ev)
 
             if qualified:
-                # Rank qualified contracts primarily by EV with win probability tie-breaker
-                score = ev + 0.1 * wp
+                # Rank qualified contracts primarily by Win Probability with EV tie-breaker.
+                # Prevents high-stakes contracts (Misère +-9) from cannibalizing high-probability Riks.
+                score = wp + 0.05 * ev
                 if score > best_score:
                     best_score = score
                     best_bid = b
