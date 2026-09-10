@@ -133,20 +133,19 @@ class NeuralAgent:
             # Tier-based confidence margins & minimum probability requirements:
             if Contract.is_open(c):
                 # Open contracts (Open Piek, Open Misere): high exposure / risk
-                req_margin = 0.20
                 min_prob = 0.70
-                min_ev = 0.15
-                qualified = (wp >= pas_win + req_margin) and (wp >= min_prob) and (ev >= min_ev)
+                min_ev = 0.20
+                qualified = (wp >= min_prob) and (ev >= min_ev)
             elif Contract.is_solo(c):
                 # Solo contracts (Acht Alleen..Solo Slim, Misere, Piek): 1 vs 3
-                req_margin = 0.10
-                min_prob = 0.58
-                min_ev = 0.05
-                qualified = (wp >= pas_win + req_margin) and (wp >= min_prob) and (ev >= min_ev)
+                # Does not require beating passive defender win rate (which can exceed 70%),
+                # but requires a solid winning probability (>=52%) and non-negative expected score.
+                min_prob = 0.52
+                min_ev = 0.00
+                qualified = (wp >= min_prob) and (ev >= min_ev)
             else:
                 # Partner contracts (Rik, Rik Beter, Troela, Moela): cooperative 2 vs 2
                 # A player declares Rik when the hand has a genuine winning expectation (wp >= 0.50 and ev >= -0.05).
-                # Does NOT require beating the passive defender win rate of passing (which can be >70% against overbidding bots).
                 min_prob = 0.50
                 min_ev = -0.05
                 qualified = (wp >= min_prob) and (ev >= min_ev)
