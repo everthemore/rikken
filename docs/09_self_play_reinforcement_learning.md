@@ -203,3 +203,28 @@ The visualizer generates `docs/convergence.png` featuring 4 synchronized panels:
 2. **Win Rate by Role**: Separate trajectories for Declarer (Solo/Lead), Partner (*Maatje*), and Defender.
 3. **Average Tricks Won**: Tricks captured when declaring vs opponent baseline.
 4. **Contract Breakdown**: Granular win rates per contract type (Rik, Rik Beter, Piek, Misère, Troela).
+
+---
+
+## 7. Multi-Generation Empirical Benchmark Results (Generations 1–14)
+
+The table below summarizes the multi-generation policy iteration loop on the Leiden ALICE HPC cluster:
+
+| Gen | vs Baseline (400g) | vs Prior Champion (200g) | Promoted? | Declarer WR | Partner (*Maatje*) WR | Defender WR | Key Milestones |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---|
+| **Gen 1** | 55.2% | — | **Yes** | 35.7% | 67.2% | 63.3% | Natural Rik bidding cured (55 bids) |
+| **Gen 2** | **68.2%** | **57.5%** | **Yes** | **58.7%** | 71.6% | **70.9%** | Dominant across all positions |
+| **Gen 3** | 61.3% | **52.5%** | **Yes** | 50.8% | 63.2% | 66.5% | Piek mastered (89.5% win rate) |
+| **Gen 4** | **65.8%** | **52.0%** | **Yes** | 56.5% | 70.5% | 67.5% | Troela 91% WR; solid anchor |
+| **Gen 10** | 55.5% | — | **Yes** | 48.7% | 82.9% | 60.2% | Baseline reset with calibrated partner thresholds |
+| **Gen 11** | 55.0% | 45.5% | No | 46.7% | **83.3%** | 61.9% | Strong partner coordination |
+| **Gen 12** | **56.8%** | **51.0%** | **Yes (🏆 Champion)** | **53.7%** | 61.5% | 61.7% | **Promoted! Piek 70.4% WR (108 bids), Open Piek 81.2%** |
+| **Gen 13** | 55.2% | 45.5% | No | 46.9% | 80.6% | 67.3% | Negen Alleen 63.6% WR (11 bids) |
+| **Gen 14** | 55.8% | 44.0% | No | 49.6% | 79.2% | 64.4% | Acht Alleen surge (48 bids, 27.1% WR) |
+
+### Key Evolutionary Milestones:
+1. **The Partner Breakthrough (Gens 1–4)**: Removing artificial defensive hurdles unlocked natural, aggressive, winning partner contracts (`RIK` win rate 45%–57% vs Heuristic's 28%–38%).
+2. **The Solo Trump Breakthrough (Gens 10–14)**: Eliminating `pas_win` from solo qualification unlocked `ACHT_ALLEEN` and `NEGEN_ALLEEN`, which the neural agent now declares frequently and wins at double the heuristic rate.
+3. **The Piek Engine**: `PIEK` is the agent's most reliable weapon, consistently capturing **60%–70% win rates across 100+ declarations per tournament**.
+4. **Current Active Champion**: **Generation 12** (`bvn_gen_12.pt` / `bn_gen_12.pt`).
+

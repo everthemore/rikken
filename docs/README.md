@@ -14,11 +14,11 @@ for the Dutch trick-taking card game *Rikken*, built for academic publication.
 | [02_human_heuristics.md](02_human_heuristics.md) | Documented human strategies, bidding guidelines, play tactics per contract type |
 | [03_implementation.md](03_implementation.md) | Full technical implementation: engine modules, data structures, algorithms |
 | [04_architecture.md](04_architecture.md) | AI architecture: BVN, Belief Network, ISMCTS, training pipeline |
-| [05_tests_and_validation.md](05_tests_and_validation.md) | Test suite design, all 36 test cases, benchmark results, validation data |
+| [05_tests_and_validation.md](05_tests_and_validation.md) | Test suite design, all 57 unit tests, benchmark results, validation data |
 | [06_resource_and_checkpoint_guide.md](06_resource_and_checkpoint_guide.md) | Hardware profiles, timing benchmarks, step-by-step checkpointing instructions |
 | [07_dataset_analysis.md](07_dataset_analysis.md) | Analysis of 1M-game dataset: heuristic player strategies, win-rates, and bidding distributions |
 | [08_slurm_cluster_deployment.md](08_slurm_cluster_deployment.md) | HPC cluster deployment, SLURM array jobs for self-play, GPU retraining, automated pipeline |
-| [09_self_play_reinforcement_learning.md](09_self_play_reinforcement_learning.md) | 47-generation empirical trajectory, 5-window replay buffer analysis, variance damping |
+| [09_self_play_reinforcement_learning.md](09_self_play_reinforcement_learning.md) | 14-generation empirical trajectory, Champion Gen 12, AlphaZero ExIt loop |
 | [10_xai_and_rule_extraction.md](10_xai_and_rule_extraction.md) | Extracted bidding thresholds, decision tree rules, trick-taking tactics, and decision matrix |
 | [11_tactical_rules_playbook.md](11_tactical_rules_playbook.md) | Printable tactical rules cheatsheet: partner conventions, declarer trump play, defender coordination |
 
@@ -36,7 +36,7 @@ python main.py benchmark --games 5000
 # Generate the Phase 1 training dataset (1M games)
 python main.py generate --games 1000000 --workers 8
 
-# Run all 36 unit tests
+# Run all 57 unit tests
 python -m pytest tests/ -v
 ```
 
@@ -68,7 +68,7 @@ rikken/
 │   └── train_bn.py         BN supervised training loop
 ├── xai/                    Explainable AI stubs (Phase 4)
 ├── tests/
-│   └── test_engine.py      36 unit tests (all passing)
+│   └── test_engine.py      57 unit tests (all passing)
 ├── config.py               All hyperparameters in one place
 └── main.py                 CLI entry point
 ```

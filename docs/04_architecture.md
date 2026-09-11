@@ -89,7 +89,7 @@ class BVN(nn.Module):
 </details>
 
 <details>
-<summary><b>🔍 View Policy Implementation: Argmax Win Probability Bidding Action (agents/neural_agent.py)</b></summary>
+<summary><b>🔍 View Policy Implementation: Calibrated Win-Probability & EV-Tiebreaker Bidding Action (agents/neural_agent.py)</b></summary>
 
 ```python
 def _act_bid(self, state: RikkenState) -> int:
@@ -97,16 +97,33 @@ def _act_bid(self, state: RikkenState) -> int:
     if not legal or legal == [int(Contract.PAS)]:
         return int(Contract.PAS)
 
-    # Predict win probabilities across all contracts
     win_probs, ev_scores = self.bvn.predict(hand=state.hands[self.seat], bids=state.bids, device=self.device)
 
-    # Mask illegal bids with -inf
-    masked_win = np.full(len(win_probs), -np.inf)
-    for b in legal:
-        masked_win[b] = win_probs[b]
+    best_bid = int(Contract.PAS)
+    best_score = -np.inf
 
-    # Select legal contract with highest Win Probability:
-    best_bid = int(np.argmax(masked_win))
+    for b in legal:
+        if b == int(Contract.PAS):
+            continue
+        c = Contract(b)
+        wp = float(win_probs[b])
+        ev = float(ev_scores[b])
+
+        # Tier-based confidence requirements
+        if Contract.is_open(c) or c in (Contract.MISERE, Contract.OPEN_MISERE):
+            min_prob, min_ev = 0.70, 0.15
+        elif Contract.is_solo(c):
+            min_prob, min_ev = 0.52, 0.00
+        else:
+            min_prob, min_ev = 0.50, -0.05
+
+        if (wp >= min_prob) and (ev >= min_ev):
+            # Rank primarily by Win Probability with EV tiebreaker:
+            score = wp + 0.05 * ev
+            if score > best_score:
+                best_score = score
+                best_bid = b
+
     return best_bid
 ```
 </details>
@@ -118,24 +135,29 @@ def _act_bid(self, state: RikkenState) -> int:
 - **Input Dimension**: 228 features
   - Own remaining hand: `52`
   - Publicly played cards: `52`
-  - Bidding history: `56` ($4 	imes 14$)
+  - Bidding history: `56` ($4 \times 14$)
   - Current trick cards: `52` (one-hot)
-  - Flattened Void Matrix: `16` ($4 	imes 4$)
+  - Flattened Void Matrix: `16` ($4 \times 4$)
 - **Architecture**:
-  - Input Projection: $228 	o 256$ with LayerNorm & GELU
+  - Input Projection: $228 \to 256$ with LayerNorm & GELU
   - Residual Trunk: 4 `ResidualBlocks` (256 hidden dimensions)
-  - 3 Output Heads (one per opponent seat): $256 	o 128 	o 52$
-  - Sigmoid $	o$ Hard Masking against Void Matrix & known cards $	o$ Normalization
+  - 3 Output Heads (one per opponent seat): $256 \to 128 \to 52$
+  - Sigmoid $\to$ Hard Masking against Void Matrix & known cards $\to$ Normalization
 - **Loss**: Average Binary Cross-Entropy loss across all 3 opponent marginal distributions.
 
 ---
 
 ## 3. ISMCTS Agent (`agents/ismcts.py`)
 
-1. **Informed Determinization**: For each of $K$ determinizations, sample hidden hands from the Belief Network's marginal probabilities while strictly respecting known cards and the logical Void Matrix.
-2. **Tree Search**: Execute MCTS rollouts using the ISMCTS-UCB1 formula:
-   $$	ext{UCB1}(a) = rac{Q(a)}{N(a)} + c \sqrt{rac{\ln(	ext{Availability}(a))}{N(a)}}$$
-3. **Action Selection**: Select the card with the highest cumulative visit count across all sampled worlds.
+1. **Belief Network-Guided Determinization (`_distribute_cards_bn`)**:
+   - For each of $K$ determinizations, the agent queries the trained Belief Network once at the root state to obtain opponent card probabilities.
+   - Unknown cards are distributed to opponents via weighted sampling proportional to predicted probabilities, randomized by opponent order to eliminate seat bias and strictly respecting the logical **Void Matrix**.
+   - Eliminates fantasy noise worlds: MCTS evaluates tree moves assuming the Declarer holds long trumps and Partner holds the called Ace.
+2. **Domain-Aware Heuristic Rollouts**:
+   - Rollouts incorporate expert Rikken conventions, including **"Terugkomen met Troef"** (partner returning highest trump after taking the called Ace).
+3. **Tree Search & Action Selection**: Execute MCTS rollouts using the ISMCTS-UCB1 formula:
+   $$\text{UCB1}(a) = \frac{Q(a)}{N(a)} + c \sqrt{\frac{\ln(\text{Availability}(a))}{N(a)}}$$
+   Select the card with the highest cumulative visit count across all sampled worlds.
 
 ---
 

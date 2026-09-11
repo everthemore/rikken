@@ -1,28 +1,24 @@
 # 05. Test Suite, Benchmarks & Validation Data
 
-The Rikken engine is validated by an automated test suite of 36 unit tests covering all rules, edge cases, and 1,000 full game simulations.
+The Rikken AI system is validated by an automated test suite of **57 unit tests** across engine mechanics, bidding calibration, Belief Network determinization, and webapp API endpoints.
 
 ---
 
-## 1. Test Suite Summary (`tests/test_engine.py`)
+## 1. Test Suite Summary (`tests/`)
 
-All 36 unit tests execute in **~2.5 seconds**:
+All 57 unit tests execute in **~2.6 seconds**:
 
 ```
-============================== 36 passed in 2.56s ==============================
+============================== 57 passed in 2.60s ==============================
 ```
 
 ### Breakdown of Test Modules:
 
-| Test Class | Tests | What is Validated |
+| Test Module / Class | Tests | What is Validated |
 |:---|:---:|:---|
-| `TestCardHelpers` | 7 | Card ID $\leftrightarrow$ string roundtrips, rank/suit lookups, `beats()` logic, trick winners |
-| `TestDeckAndDeal` | 5 | 52-card distribution, no duplicates, round-robin 6-then-7 order, clumping riffle shuffle |
-| `TestBiddingRules` | 6 | Pass rules, non-rebidding, ascending hierarchy, Troela 3-Ace requirement, 4-pass redeal |
-| `TestTrickTakingRules` | 4 | Follow-suit obligation, must-trump logic, free discards on dual void, trick-lead freedom |
-| `TestVoidMatrix` | 4 | Void inference on fail-to-follow, dual void inference on discard, clean tracking |
-| `TestEarlyStopping` | 8 | Misère 1-trick loss, Alleen win/loss thresholds, Solo Slim 1-trick loss, Piek dead zones & wins |
-| `TestFullGame` | 2 | End-to-end game execution, 1,000 continuous games without exceptions or illegal moves |
+| **`test_engine.py`** | **45** | Card helpers, 52-card round-robin dealing, clumping shuffle, legal bidding & trick priority, void matrix inference, multi-tier early stopping, 1,000 full game stress tests |
+| **`test_bidding_calibration.py`** | **8** | Marginal Open Piek/Misère rejection, solid Rik acceptance, negative-EV contract rejection, heuristic rollouts, **Belief Network-guided ISMCTS determinization** |
+| **`test_webapp.py`** | **4** | Flask API endpoints, AI advice engine, live Belief Network probability heatmaps, legal move generation |
 
 ---
 
