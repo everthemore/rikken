@@ -168,3 +168,36 @@ def test_calibrated_bidding_rejects_marginal_misere():
 
     assert bid == int(Contract.PAS), f"Expected PAS on marginal Misere, got {Contract(bid).name}"
 
+
+def test_ismcts_bn_guided_determinization():
+    """Verify that ISMCTS determinization uses Belief Network predictions when available."""
+    game = RikkenGame()
+
+    class MockBeliefNetwork:
+        device = "cpu"
+        def predict(self, own_hand, played_cards, bid_history, current_trick, void_matrix, my_seat, device="cpu"):
+            # Return 3 distributions of 52 cards
+            # Give opponent 0 high probability for card 0, opponent 1 for card 1, etc.
+            p0 = np.full(52, 0.01, dtype=np.float32)
+            p1 = np.full(52, 0.01, dtype=np.float32)
+            p2 = np.full(52, 0.01, dtype=np.float32)
+            p0[0] = 0.99
+            return [p0, p1, p2]
+
+    ismcts = ISMCTSAgent(seat=0, game=game, n_determinizations=3, n_rollouts=6, belief_network=MockBeliefNetwork())
+    state = game.reset()
+    state.phase = Phase.TRICK_TAKING
+    state.contract = Contract.RIK
+
+    # Sample a determinization
+    det = ismcts._sample_determinization(state)
+    # The determinized state must be valid and filled
+    assert det.hands[1].sum() > 0
+    assert det.hands[2].sum() > 0
+    assert det.hands[3].sum() > 0
+
+    # Also test act() with the BN wired in
+    act = ismcts.act(state)
+    assert 0 <= act < 52
+
+

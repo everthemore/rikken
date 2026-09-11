@@ -130,9 +130,30 @@ class ISMCTSAgent:
 
         rollouts_per_det = max(1, self.n_rollouts // self.n_det)
 
+        # Query Belief Network once for the root state if available
+        opp_probs = None
+        if self.bn is not None:
+            try:
+                trick_oh = np.zeros(52, dtype=np.int8)
+                for c in state.current_trick:
+                    if c >= 0:
+                        trick_oh[c] = 1
+                device = getattr(self.bn, 'device', 'cpu')
+                opp_probs = self.bn.predict(
+                    own_hand=state.hands[self.seat],
+                    played_cards=state.played_cards,
+                    bid_history=state.bids,
+                    current_trick=trick_oh,
+                    void_matrix=state.void_matrix,
+                    my_seat=self.seat,
+                    device=device,
+                )
+            except Exception:
+                opp_probs = None
+
         for _ in range(self.n_det):
-            # 1. Determinize: sample a plausible complete game state
-            det_state = self._sample_determinization(state)
+            # 1. Determinize: sample a plausible complete game state (BN-guided or uniform)
+            det_state = self._sample_determinization(state, opp_probs=opp_probs)
 
             # 2. Run MCTS on this determinized state
             for _ in range(rollouts_per_det):
@@ -150,13 +171,14 @@ class ISMCTSAgent:
     # -------------------------------------------------------------------------
     # Determinization
     # -------------------------------------------------------------------------
-    def _sample_determinization(self, state: RikkenState) -> RikkenState:
+    def _sample_determinization(
+        self, state: RikkenState, opp_probs: Optional[List[np.ndarray]] = None
+    ) -> RikkenState:
         """
         Sample a complete hidden-information state consistent with public knowledge.
 
-        Phase 1: Uniform random — deal remaining cards randomly to opponents,
-                 respecting the Void Matrix (no card of a void suit to that player).
-        Phase 3: Replace with BN-guided sampling.
+        Phase 3: Belief Network-guided determinization when available.
+        Fallback: Uniform random sampling respecting the Void Matrix.
 
         Returns:
             A copy of `state` with all hidden hands filled in.
@@ -180,15 +202,78 @@ class ISMCTSAgent:
         opponents = [p for p in range(4) if p != self.seat]
         opp_counts = [int(s.hands[p].sum()) for p in opponents]
 
-        # Shuffle unknown cards and distribute, respecting void matrix
-        sampled_hands = self._distribute_cards(
-            unknown_cards, opponents, opp_counts, s.void_matrix, s.trump_suit
-        )
+        # Distribute unknown cards (BN-guided if available, else uniform)
+        if opp_probs is not None:
+            sampled_hands = self._distribute_cards_bn(
+                unknown_cards, opponents, opp_counts, s.void_matrix, opp_probs
+            )
+        else:
+            sampled_hands = self._distribute_cards(
+                unknown_cards, opponents, opp_counts, s.void_matrix, s.trump_suit
+            )
 
         for p, hand_arr in sampled_hands.items():
             s.hands[p] = hand_arr
 
         return s
+
+    def _distribute_cards_bn(
+        self,
+        unknown_cards: np.ndarray,
+        opponents: List[int],
+        opp_counts: List[int],
+        void_matrix: np.ndarray,
+        opp_probs: List[np.ndarray],
+    ) -> Dict[int, np.ndarray]:
+        """
+        Distribute `unknown_cards` to opponents using Belief Network marginal probabilities.
+        Opponents are sampled in randomized order to eliminate seat bias.
+        """
+        from engine.card import suit_of
+
+        max_retries = 15
+        for _ in range(max_retries):
+            available = set(unknown_cards)
+            result = {p: np.zeros(52, dtype=np.int8) for p in opponents}
+            valid = True
+
+            # Randomize opponent sampling order to avoid seat bias
+            order = list(range(len(opponents)))
+            self.rng.shuffle(order)
+
+            for i in order:
+                p = opponents[i]
+                count = opp_counts[i]
+                probs = opp_probs[i]
+
+                # Filter to available cards non-void for player p
+                eligible = [c for c in available if not void_matrix[p, suit_of(c)]]
+                if len(eligible) < count:
+                    valid = False
+                    break
+
+                if count == 0:
+                    continue
+
+                p_weights = np.array([max(1e-6, probs[c]) for c in eligible], dtype=np.float64)
+                total_w = p_weights.sum()
+                if total_w <= 0:
+                    p_weights = np.ones(len(eligible), dtype=np.float64) / len(eligible)
+                else:
+                    p_weights /= total_w
+
+                chosen = self.rng.choice(eligible, size=count, replace=False, p=p_weights)
+                for c in chosen:
+                    result[p][c] = 1
+                    available.remove(c)
+
+            if valid and len(available) == 0:
+                return result
+
+        # Fallback to uniform distribution if BN sampling retries exceeded
+        return self._distribute_cards(
+            unknown_cards, opponents, opp_counts, void_matrix, trump_suit=0
+        )
 
     def _distribute_cards(
         self,

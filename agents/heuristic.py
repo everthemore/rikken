@@ -219,6 +219,13 @@ class HeuristicAgent:
             if trump_legal:
                 return int(max(trump_legal, key=lambda c: rank_of(c)))
 
+        # Partner convention ("Terugkomen met Troef"): If revealed as partner,
+        # return highest remaining trump to draw defenders' trumps and give control back to Declarer!
+        if p == state.partner and state.partner_revealed and trump >= 0:
+            trump_legal = [c for c in legal_cards if suit_of(c) == trump]
+            if trump_legal:
+                return int(max(trump_legal, key=lambda c: rank_of(c)))
+
         # Otherwise lead Aces in side suits
         aces = [c for c in legal_cards if rank_of(c) == ACE_RANK and suit_of(c) != trump]
         if aces:
