@@ -102,11 +102,10 @@ def probe_partner_trump_lead(
                 and len([c for c in state.current_trick if c >= 0]) == 0
                 and not partner_lead_tracked
             ):
-                partner_lead_tracked = True
                 partner_hand = state.hands[partner]
                 trump_cards_held = np.where(partner_hand & SUIT_MASKS[trump])[0]
-
                 if len(trump_cards_held) > 0:
+                    partner_lead_tracked = True
                     stats["opportunities"] += 1
                     played_suit = suit_of(card)
                     is_trump = (played_suit == trump)

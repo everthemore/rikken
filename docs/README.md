@@ -20,6 +20,7 @@ for the Dutch trick-taking card game *Rikken*, built for academic publication.
 | [08_slurm_cluster_deployment.md](08_slurm_cluster_deployment.md) | HPC cluster deployment, SLURM array jobs for self-play, GPU retraining, automated pipeline |
 | [09_self_play_reinforcement_learning.md](09_self_play_reinforcement_learning.md) | 47-generation empirical trajectory, 5-window replay buffer analysis, variance damping |
 | [10_xai_and_rule_extraction.md](10_xai_and_rule_extraction.md) | Extracted bidding thresholds, decision tree rules, trick-taking tactics, and decision matrix |
+| [11_tactical_rules_playbook.md](11_tactical_rules_playbook.md) | Printable tactical rules cheatsheet: partner conventions, declarer trump play, defender coordination |
 
 ---
 
