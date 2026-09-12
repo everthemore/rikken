@@ -89,21 +89,21 @@ echo "  Iteration: $ITERATION | Buffer Window: $BUFFER_WINDOW generations"
 echo "  Replay Buffer Directories: $REPLAY_PATHS"
 echo "=========================================================="
 
-# 1. Retrain Bidding Value Network (BVN) on Replay Buffer
+# 1. Retrain Bidding Value Network (BVN) on Replay Buffer (starting from reigning champion)
 echo "--- 1. Retraining BVN on Rolling Replay Buffer ---"
 $PYTHON -u -m training.train_bvn \
     --data-path "$REPLAY_PATHS" \
     --epochs "$EPOCHS" \
     --batch-size "$BATCH_SIZE" \
-    --resume-latest
+    --resume "checkpoints/bvn_best.pt"
 
-# 2. Retrain Belief Network (BN) on Replay Buffer
+# 2. Retrain Belief Network (BN) on Replay Buffer (starting from reigning champion)
 echo "--- 2. Retraining Belief Network on Rolling Replay Buffer ---"
 $PYTHON -u -m training.train_bn \
     --data-path "$REPLAY_PATHS" \
     --epochs "$EPOCHS" \
     --batch-size "$BATCH_SIZE" \
-    --resume-latest
+    --resume "checkpoints/bn_best.pt"
 
 # 3. Benchmark Tournament Evaluation vs Baseline & Log to eval_history.json
 echo "--- 3. Evaluating Generation $ITERATION in Tournament ---"
@@ -133,11 +133,11 @@ metrics = run_tournament(
     seed=42 + iter_num * 1000
 )
 
-# 2. Evaluate vs Previous Generation Champion (Neural vs Neural gating)
-prev_bvn = f'checkpoints/bvn_gen_{iter_num - 1}.pt' if iter_num > 1 else 'checkpoints/bvn_foundation.pt'
+# 2. Evaluate vs Reigning Champion (Neural vs Neural gating against bvn_best.pt)
+prev_bvn = 'checkpoints/bvn_best.pt' if os.path.exists('checkpoints/bvn_best.pt') else (f'checkpoints/bvn_gen_{iter_num - 1}.pt' if iter_num > 1 else 'checkpoints/bvn_foundation.pt')
 vs_prev_wr = None
 if os.path.exists(prev_bvn):
-    print(f"\n--- 3B. Evaluating Gen {iter_num} vs Prior Champion ({prev_bvn}) ---")
+    print(f"\n--- 3B. Evaluating Gen {iter_num} vs Reigning Champion ({prev_bvn}) ---")
     try:
         h2h = run_tournament(
             n_games=min(200, tournament_games),
