@@ -95,7 +95,7 @@ def test_calibrated_bidding_negative_ev_rejection():
 
     win_probs = np.full(15, 0.20, dtype=np.float32)
     win_probs[int(Contract.PAS)] = 0.50
-    win_probs[int(Contract.ACHT_ALLEEN)] = 0.65  # Higher win prob
+    win_probs[int(Contract.ACHT_ALLEEN)] = 0.75  # Higher win prob (> 0.68 threshold)
 
     ev_scores = np.full(15, -0.5, dtype=np.float32)
     ev_scores[int(Contract.PAS)] = 0.10
@@ -199,5 +199,38 @@ def test_ismcts_bn_guided_determinization():
     # Also test act() with the BN wired in
     act = ismcts.act(state)
     assert 0 <= act < 52
+
+
+def test_bvn_dual_loss_counterfactual_and_cql():
+    """Verify that BVNDualLoss applies counterfactual Ace loss on Misere and CQL penalty on pass hands."""
+    import torch
+    from networks.bvn import BVNDualLoss
+
+    loss_fn = BVNDualLoss(lambda_aux=0.5, lambda_cql=0.2)
+
+    # 2 hands: hand 0 has Ace (card 12), hand 1 has no Ace
+    hands = torch.zeros((2, 52), dtype=torch.float32)
+    hands[0, 12] = 1.0
+
+    bid_taken = torch.tensor([0, 1], dtype=torch.long)  # Hand 0 passed, hand 1 bid Rik
+    won = torch.tensor([0.0, 1.0], dtype=torch.float32)
+    outcome = torch.tensor([0.0, 0.5], dtype=torch.float32)
+
+    # Simulated predictions where Misere is hallucinated high on hand 0
+    win_probs = torch.full((2, 15), 0.3, dtype=torch.float32)
+    win_probs[0, int(Contract.MISERE)] = 0.85      # Hallucinated Misere on hand with Ace!
+    win_probs[0, int(Contract.ACHT_ALLEEN)] = 0.70  # Hallucinated Acht Alleen on pass hand!
+
+    ev_scores = torch.zeros((2, 15), dtype=torch.float32)
+    ev_scores[0, int(Contract.MISERE)] = 0.50
+
+    # Loss without hands (baseline supervised only)
+    loss_base, _, _ = loss_fn(win_probs, ev_scores, bid_taken, won, outcome, hands=None)
+
+    # Loss with hands (includes counterfactual Ace grounding + CQL)
+    loss_with_cf, _, _ = loss_fn(win_probs, ev_scores, bid_taken, won, outcome, hands=hands)
+
+    assert loss_with_cf > loss_base, "Counterfactual & CQL grounding should increase loss when Ace Misere/Solo is hallucinated"
+
 
 

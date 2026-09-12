@@ -1,15 +1,15 @@
 # 05. Test Suite, Benchmarks & Validation Data
 
-The Rikken AI system is validated by an automated test suite of **57 unit tests** across engine mechanics, bidding calibration, Belief Network determinization, and webapp API endpoints.
+The Rikken AI system is validated by an automated test suite of **58 unit tests** across engine mechanics, bidding calibration, Belief Network determinization, and webapp API endpoints.
 
 ---
 
 ## 1. Test Suite Summary (`tests/`)
 
-All 57 unit tests execute in **~2.6 seconds**:
+All 58 unit tests execute in **~2.6 seconds**:
 
 ```
-============================== 57 passed in 2.60s ==============================
+============================== 58 passed in 2.65s ==============================
 ```
 
 ### Breakdown of Test Modules:
@@ -17,7 +17,7 @@ All 57 unit tests execute in **~2.6 seconds**:
 | Test Module / Class | Tests | What is Validated |
 |:---|:---:|:---|
 | **`test_engine.py`** | **45** | Card helpers, 52-card round-robin dealing, clumping shuffle, legal bidding & trick priority, void matrix inference, multi-tier early stopping, 1,000 full game stress tests |
-| **`test_bidding_calibration.py`** | **8** | Marginal Open Piek/Misère rejection, solid Rik acceptance, negative-EV contract rejection, heuristic rollouts, **Belief Network-guided ISMCTS determinization** |
+| **`test_bidding_calibration.py`** | **9** | Marginal Open Piek/Misère rejection, solid Rik acceptance, negative-EV contract rejection, heuristic rollouts, **Belief Network-guided ISMCTS determinization**, **BVNDualLoss Counterfactual Grounding & CQL** |
 | **`test_webapp.py`** | **4** | Flask API endpoints, AI advice engine, live Belief Network probability heatmaps, legal move generation |
 
 ---

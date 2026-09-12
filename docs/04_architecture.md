@@ -113,7 +113,10 @@ def _act_bid(self, state: RikkenState) -> int:
         if Contract.is_open(c) or c in (Contract.MISERE, Contract.OPEN_MISERE):
             min_prob, min_ev = 0.70, 0.15
         elif Contract.is_solo(c):
-            min_prob, min_ev = 0.52, 0.00
+            if Contract.is_trump_contract(c):
+                min_prob, min_ev = 0.68, 0.05  # Solo trump (Acht Alleen..Solo Slim)
+            else:
+                min_prob, min_ev = 0.52, 0.00  # Piek (1 or 5 tricks no-trump)
         else:
             min_prob, min_ev = 0.50, -0.05
 

@@ -137,10 +137,16 @@ class NeuralAgent:
                 min_ev = 0.15
                 qualified = (wp >= min_prob) and (ev >= min_ev)
             elif Contract.is_solo(c):
-                # Solo trump contracts (Acht Alleen..Solo Slim) & Piek: 1 vs 3
-                # Requires solid winning probability (>=52%) and non-negative expected score.
-                min_prob = 0.52
-                min_ev = 0.00
+                # Solo contracts: 1 vs 3
+                if Contract.is_trump_contract(c):
+                    # Solo trump (Acht Alleen..Solo Slim): 1 vs 3 against defending coalition
+                    # Requires high confidence (>=68%) and positive expected score.
+                    min_prob = 0.68
+                    min_ev = 0.05
+                else:
+                    # Solo no-trump (Piek): 1 or 5 tricks, high success rate (72% WR at 0.52)
+                    min_prob = 0.52
+                    min_ev = 0.00
                 qualified = (wp >= min_prob) and (ev >= min_ev)
             else:
                 # Partner contracts (Rik, Rik Beter, Troela, Moela): cooperative 2 vs 2

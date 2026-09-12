@@ -210,18 +210,35 @@ class BVN(nn.Module):
         return win_p
 
 
+from engine.card import ACES
+from engine.state import Contract
+
+
 class BVNDualLoss(nn.Module):
     """
     Joint loss function for Dual-Head BVN:
       - Binary Cross-Entropy (BCE) on Win Probability head
       - Smooth L1 (Huber) regression on Expected Points head
+      - Counterfactual Grounding Loss: enforces game mechanics that hands holding Aces
+        cannot win trick-avoidance contracts (MISERE, OPEN_MISERE) -> target 0.0.
+      - Conservative Action-Value (CQL) Regularizer: penalizes hallucinated overconfidence
+        on solo contracts when the player chose to PASS.
     """
 
-    def __init__(self, beta: float = 0.1, alpha_ev: float = 0.5):
+    def __init__(
+        self,
+        beta: float = 0.1,
+        alpha_ev: float = 0.5,
+        lambda_aux: float = 0.5,
+        lambda_cql: float = 0.2,
+    ):
         super().__init__()
         self.bce = nn.BCELoss()
         self.huber = nn.SmoothL1Loss(beta=beta)
         self.alpha_ev = alpha_ev
+        self.lambda_aux = lambda_aux
+        self.lambda_cql = lambda_cql
+        self.register_buffer('aces_idx', torch.tensor([12, 25, 38, 51], dtype=torch.long))
 
     def forward(
         self,
@@ -230,13 +247,51 @@ class BVNDualLoss(nn.Module):
         bid_taken: torch.Tensor,
         won: torch.Tensor,
         outcome: torch.Tensor,
+        hands: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        # 1. Supervised loss on the chosen contract
         taken_win = win_probs.gather(1, bid_taken.unsqueeze(1)).squeeze(1)
         taken_ev  = ev_scores.gather(1, bid_taken.unsqueeze(1)).squeeze(1)
 
         loss_win = self.bce(taken_win, won.float())
         loss_ev  = self.huber(taken_ev, outcome.float())
         total_loss = loss_win + self.alpha_ev * loss_ev
+
+        # 2. Counterfactual grounding: Hands with Aces cannot win Misère / Open Misère
+        if hands is not None and self.lambda_aux > 0:
+            aces_tensor = self.aces_idx.to(hands.device)
+            has_ace = (hands[:, aces_tensor].sum(dim=1) > 0)
+            if has_ace.any():
+                # Win probability for Misere with an Ace must be 0
+                mis_wp = win_probs[has_ace, int(Contract.MISERE)]
+                open_mis_wp = win_probs[has_ace, int(Contract.OPEN_MISERE)]
+                loss_cf_win = self.bce(mis_wp, torch.zeros_like(mis_wp)) + \
+                              self.bce(open_mis_wp, torch.zeros_like(open_mis_wp))
+
+                # Expected points for Misere with an Ace is minimum (-1.0 normalized)
+                mis_ev = ev_scores[has_ace, int(Contract.MISERE)]
+                open_mis_ev = ev_scores[has_ace, int(Contract.OPEN_MISERE)]
+                loss_cf_ev = self.huber(mis_ev, torch.full_like(mis_ev, -1.0)) + \
+                             self.huber(open_mis_ev, torch.full_like(open_mis_ev, -1.0))
+
+                total_loss = total_loss + self.lambda_aux * (loss_cf_win + self.alpha_ev * loss_cf_ev)
+
+        # 3. Conservative Action-Value (CQL) Regularizer on PASS hands:
+        # If the player passed, penalize ungrounded overconfidence (>0.45) on solo contracts
+        if self.lambda_cql > 0:
+            is_pass = (bid_taken == int(Contract.PAS))
+            if is_pass.any():
+                solo_idx = [
+                    int(Contract.ACHT_ALLEEN),
+                    int(Contract.NEGEN_ALLEEN),
+                    int(Contract.TIEN_ALLEEN),
+                    int(Contract.MISERE),
+                    int(Contract.OPEN_MISERE),
+                ]
+                pass_solo_wp = win_probs[is_pass][:, solo_idx]
+                loss_cql = torch.relu(pass_solo_wp - 0.45).pow(2).mean()
+                total_loss = total_loss + self.lambda_cql * loss_cql
+
         return total_loss, loss_win, loss_ev
 
 

@@ -99,7 +99,7 @@ def train(
 
             optimizer.zero_grad()
             win_probs, ev_scores = model(hands, bid_hist)
-            loss, loss_win, loss_ev = criterion(win_probs, ev_scores, bid_taken, won, outcome)
+            loss, loss_win, loss_ev = criterion(win_probs, ev_scores, bid_taken, won, outcome, hands=hands)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
@@ -120,7 +120,7 @@ def train(
                     bid_taken.to(device), won.to(device), outcome.to(device)
                 )
                 win_probs, ev_scores = model(hands, bid_hist)
-                loss, loss_win, loss_ev = criterion(win_probs, ev_scores, bid_taken, won, outcome)
+                loss, loss_win, loss_ev = criterion(win_probs, ev_scores, bid_taken, won, outcome, hands=hands)
                 val_loss += loss.item() * len(hands)
 
                 taken_win = win_probs.gather(1, bid_taken.unsqueeze(1)).squeeze(1)
